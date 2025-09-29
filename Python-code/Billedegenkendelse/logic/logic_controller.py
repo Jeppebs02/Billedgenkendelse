@@ -1,5 +1,5 @@
-from logic.is_face_present.face_detector import DetectionVisualizer
-from logic.types import AnalysisReport, CheckResult, Requirement, Severity
+from .is_face_present.face_detector import DetectionVisualizer
+from .types import AnalysisReport, CheckResult, Requirement, Severity
 from mediapipe.tasks.python import vision
 
 
@@ -25,6 +25,11 @@ class LogicController:
         checks.append(single_face)
 
         # 3 Landmarks present
+        landmarks_present = self._are_landmarks_present(face_landmarker_result)
+        checks.append(landmarks_present)
+
+        # 4 Eyes open - TODO
+
 
 
         overall_pass = all(c.passed for c in checks)
