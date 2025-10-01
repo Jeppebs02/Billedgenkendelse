@@ -48,6 +48,9 @@ class DetectionVisualizer:
     def ensure_dir(self, path: str):
         os.makedirs(path, exist_ok=True)
 
+
+
+
     def _normalized_to_pixel_coordinates(
             self,
             normalized_x: float,
@@ -168,8 +171,8 @@ class DetectionVisualizer:
         plt.show()
 
     # Detection functions
-    def analyze_image(self, IMAGE_FILE_NAME: str,
-                      options: Optional[vision.FaceDetectorOptions] = None) -> vision.FaceDetectorResult:
+
+    def analyze_image(self, IMAGE_FILE_NAME: str, options: Optional[vision.FaceDetectorOptions] = None) -> vision.FaceDetectorResult:
         """
         Analyzes an image to detect faces and returns the raw result.
         """
@@ -219,8 +222,7 @@ class DetectionVisualizer:
 
         return detection_result
 
-    def analyze_and_annotate_image(self, IMAGE_FILE_NAME: str, OUT_FILE_NAME: str,
-                                   options: Optional[vision.FaceDetectorOptions] = None) -> vision.FaceDetectorResult:
+    def analyze_and_annotate_image(self, IMAGE_FILE_NAME: str, OUT_FILE_NAME: str, options: Optional[vision.FaceDetectorOptions] = None) -> vision.FaceDetectorResult:
         """
         Analyzes, annotates, and plots face detection results.
         """
@@ -248,8 +250,7 @@ class DetectionVisualizer:
 
     # Landmark functions
 
-    def analyze_landmarks(self, IMAGE_FILE_NAME: str,
-                          options: Optional[vision.FaceLandmarkerOptions] = None) -> vision.FaceLandmarkerResult:
+    def analyze_landmarks(self, IMAGE_FILE_NAME: str, options: Optional[vision.FaceLandmarkerOptions] = None) -> vision.FaceLandmarkerResult:
         """
         Analyzes an image to detect face landmarks and returns the raw result.
         Defaults to detecting one face. Please use custom options to detect more.
@@ -289,8 +290,7 @@ class DetectionVisualizer:
 
         return detection_result
 
-    def analyze_and_annotate_landmarks(self, IMAGE_FILE_NAME: str, OUT_FILE_NAME: str, options: Optional[
-        vision.FaceLandmarkerOptions] = None) -> vision.FaceLandmarkerResult:
+    def analyze_and_annotate_landmarks(self, IMAGE_FILE_NAME: str, OUT_FILE_NAME: str, options: Optional[vision.FaceLandmarkerOptions] = None) -> vision.FaceLandmarkerResult:
         """
         Analyzes, annotates, and plots face landmark results.
         Defaults to detecting and plotting one face. Please use custom options to detect and plot more.
