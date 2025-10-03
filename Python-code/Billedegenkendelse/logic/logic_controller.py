@@ -1,7 +1,7 @@
 from .is_face_present.face_detector import DetectionVisualizer
 from .types import AnalysisReport, CheckResult, Requirement, Severity
 from mediapipe.tasks.python import vision
-from typing import Tuple, Union, Optional
+from typing import Tuple, Union, Optional, List
 import math
 
 
@@ -21,6 +21,21 @@ class LogicController:
     def _mean(self, xs):
         '''Returns the average of numbers in an interable'''
         return sum(xs) / max(1, len(xs))
+
+    def _calculate_ear(self, eye_landmarks: List) -> float:
+        """
+        Calculates EAR for a single eye.
+        """
+        # Vertical distances
+        p2_p6 = self._dist(eye_landmarks[1], eye_landmarks[5])
+        p3_p5 = self._dist(eye_landmarks[2], eye_landmarks[4])
+
+        # Horizontal distance
+        p1_p4 = self._dist(eye_landmarks[0], eye_landmarks[3])
+
+        # EAR calculation
+        ear = (p2_p6 + p3_p5) / (2.0 * p1_p4)
+        return ear
 
 
     def run_analysis(self, image_path: str) -> AnalysisReport:
@@ -42,7 +57,9 @@ class LogicController:
         landmarks_present = self._are_landmarks_present(face_landmarker_result)
         checks.append(landmarks_present)
 
-        # 4 Eyes open - TODO
+        # 4 Eyes open -
+        eyes_visible = self.eyes_visible_check(face_landmarker_result)
+        checks.append(eyes_visible)
 
 
 
@@ -123,7 +140,7 @@ class LogicController:
                 details={"faces_with_landmarks": 0}
             )
 
-    def eyes_visible_check(self, result: vision.FaceLandmarkerResult) -> CheckResult:
+    def eyes_visible_check(self, result: vision.FaceLandmarkerResult, ear_threshold: float = 0.25) -> CheckResult:
 
         if not result.face_landmarks or len(result.face_landmarks) == 0:
             return CheckResult(
@@ -140,8 +157,9 @@ class LogicController:
         # Indices for eye corners
         # Check this link for details
         # https://learnopencv.com/driver-drowsiness-detection-using-mediapipe-in-python/#Landmark-Detection-Using-Mediapipe-Face-Mesh-In-Python
-        LEFT_EYE_LANDMARKS = [33, 133]  # left eye outer & inner
-        RIGHT_EYE_LANDMARKS = [362, 263]  # right eye outer & inner
+        LEFT_EYE_LANDMARKS = [362, 385, 387, 263, 373, 380]  # left eye outer & inner
+        RIGHT_EYE_LANDMARKS = [33, 160, 158, 133, 153, 144]  # right eye outer & inner
+
 
         try:
             left_eye = [landmarks[i] for i in LEFT_EYE_LANDMARKS]
@@ -156,12 +174,14 @@ class LogicController:
             )
 
 
-        left_eye_width = self._dist(left_eye[0], left_eye[1])
+        left_ear = self._calculate_ear(left_eye)
+        right_ear = self._calculate_ear(right_eye)
 
-        right_eye_width = self._dist(right_eye[0], right_eye[1])
+        # Average EAR for both eyes
+        avg_ear = (left_ear + right_ear) / 2.0
 
-        # Heuristic: eyes should have a nontrivial width (> ~0.02 in normalized coords)
-        eyes_visible = left_eye_width > 0.02 and right_eye_width > 0.02
+        # The EAR is typically around 0.25-0.3 for open eyes and drops towards 0 for closed eyes. - Chatgpt <3
+        eyes_visible = avg_ear > ear_threshold
 
         if eyes_visible:
             return CheckResult(
@@ -170,8 +190,8 @@ class LogicController:
                 severity=Severity.INFO,
                 message="Both eyes are visible.",
                 details={
-                    "left_eye_width": left_eye_width,
-                    "right_eye_width": right_eye_width
+                    "left_eye_width": left_ear,
+                    "right_eye_width": right_ear
                 }
             )
         else:
@@ -181,7 +201,7 @@ class LogicController:
                 severity=Severity.ERROR,
                 message="Eyes not visible or too small (may be closed/obstructed).",
                 details={
-                    "left_eye_width": left_eye_width,
-                    "right_eye_width": right_eye_width
+                    "left_eye_width": left_ear,
+                    "right_eye_width": right_ear
                 }
             )
