@@ -3,6 +3,10 @@ import subprocess
 from pathlib import Path
 import zipfile
 import yaml
+import glob
+from IPython.display import Image, display
+from torch.fx.experimental.migrate_gradual_types.constraint_transformation import transform_index_select
+
 
 def prepare_data(project_root: Path):
     zip_path = project_root / "data" / "data.zip"
@@ -46,8 +50,39 @@ def create_data_yaml(project_root: Path):
     print("-----------------\n")
     return data_yaml_path
 
+
+
+def test_model(project_root: Path):
+    print("Testing the trained model...")
+    # run yolo subprocess to test the model
+
+    best = project_root / "train" / "weights" / "best.pt"
+    subprocess.run([
+        "yolo", "detect", "predict",
+        f"model={str(best)}",
+        f"source={str(project_root / 'data' / 'validation' / 'images')}",
+        "save=True"
+    ], check=True)
+
+    for image_path in glob.glob(f'/content/runs/detect/predict/*.jpg')[:10]:
+        display(Image(filename=image_path, height=400))
+        print('\n')
+
+
+def train_model(project_root: Path):
+    subprocess.run([
+        "yolo", "detect", "train",
+        f"data={str(data_yaml)}",
+        "model=yolo11s.pt",
+        "epochs=3",
+        "imgsz=480",
+        f"project={str(project_root)}",  # ensure runs/ lives under your project
+        "name=train"  # runs/detect/train/...
+    ], check=True, cwd=project_root)
+
 if __name__ == "__main__":
     project_root = Path(__file__).parent.resolve()  # ...\Billedegenkendelse
+    print(f"Project root: {project_root}")
 
     # 1) Prepare data (unzips & splits)
     prepare_data(project_root)
@@ -58,11 +93,8 @@ if __name__ == "__main__":
         raise SystemExit(1)
 
     # 3) Train — point YOLO to the absolute path of data.yaml
-    subprocess.run(
-        ["yolo", "detect", "train",
-         f"data={str(data_yaml)}",
-         "model=yolo11s.pt",
-         "epochs=60",
-         "imgsz=480"],
-        check=True
-    )
+    train_model(project_root)
+
+    test_model(project_root)
+
+
