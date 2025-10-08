@@ -232,8 +232,11 @@ class LogicController:
             gap = self._dist(upper_inner, lower_inner)
 
             # Corner widths (outer + inner)
-            left_outer, right_outer = lmk[61], lmk[291]
-            left_inner, right_inner = lmk[78], lmk[308]
+            left_outer = lmk[61]
+            right_outer = lmk[291]
+
+            left_inner = lmk[78]
+            right_inner = lmk[308]
             width_outer = self._dist(left_outer, right_outer)
             width_inner = self._dist(left_inner, right_inner)
             # return whichever is larger
@@ -252,9 +255,10 @@ class LogicController:
         # eps is to avoid division by zero, it is a tiny number, so even if width is 0, ratio will be very large.
         # 1e-6 = 0.000001
         ratio = gap / (width + eps)
-        ok = ratio <= max_gap_ratio
+        # Why do we divide by width? To normalize the gap size relative to face size.
+        final_result = ratio <= max_gap_ratio
 
-        if ok:
+        if final_result:
             return CheckResult(
                 requirement=Requirement.MOUTH_CLOSED,
                 passed=True,
