@@ -61,6 +61,10 @@ class LogicController:
         eyes_visible = self.eyes_visible_check(face_landmarker_result)
         checks.append(eyes_visible)
 
+        # 5 Mouth closed
+        mouth_closed = self.mouth_closed_check(face_landmarker_result)
+        checks.append(mouth_closed)
+
 
 
         overall_pass = all(c.passed for c in checks)
@@ -203,5 +207,78 @@ class LogicController:
                 details={
                     "left_eye_width": left_ear,
                     "right_eye_width": right_ear
+                }
+            )
+
+    def mouth_closed_check(self, result: vision.FaceLandmarkerResult, max_gap_ratio: float = 0.03) -> CheckResult:
+        # Check
+        if not result.face_landmarks or len(result.face_landmarks) == 0:
+            return CheckResult(
+                requirement=Requirement.MOUTH_CLOSED,
+                passed=False,
+                severity=Severity.ERROR,
+                message="No landmarks detected, cannot check if mouth is closed.",
+                details={"landmarks_detected": False}
+            )
+
+        lmk = result.face_landmarks[0]
+
+        try:
+            # Inner-lip vertical gap
+            # see https://github.com/google-ai-edge/mediapipe/blob/a908d668c730da128dfa8d9f6bd25d519d006692/mediapipe/modules/face_geometry/data/canonical_face_model_uv_visualization.png
+            # for indices
+            upper_inner = lmk[13]
+            lower_inner = lmk[14]
+            gap = self._dist(upper_inner, lower_inner)
+
+            # Corner widths (outer + inner)
+            left_outer, right_outer = lmk[61], lmk[291]
+            left_inner, right_inner = lmk[78], lmk[308]
+            width_outer = self._dist(left_outer, right_outer)
+            width_inner = self._dist(left_inner, right_inner)
+            # return whichever is larger
+            width = max(width_outer, width_inner)
+
+        except IndexError:
+            return CheckResult(
+                requirement=Requirement.MOUTH_CLOSED,
+                passed=False,
+                severity=Severity.ERROR,
+                message="Could not find expected mouth landmarks.",
+                details={"landmarks_count": len(lmk)}
+            )
+
+        eps = 1e-6
+        # eps is to avoid division by zero, it is a tiny number, so even if width is 0, ratio will be very large.
+        # 1e-6 = 0.000001
+        ratio = gap / (width + eps)
+        ok = ratio <= max_gap_ratio
+
+        if ok:
+            return CheckResult(
+                requirement=Requirement.MOUTH_CLOSED,
+                passed=True,
+                severity=Severity.INFO,
+                message=f"Mouth closed (gap ratio {ratio:.3f} ≤ {max_gap_ratio}).",
+                details={
+                    "gap": gap,
+                    "width_outer": width_outer,
+                    "width_inner": width_inner,
+                    "norm_width": width,
+                    "gap_ratio": ratio
+                }
+            )
+        else:
+            return CheckResult(
+                requirement=Requirement.MOUTH_CLOSED,
+                passed=False,
+                severity=Severity.ERROR,
+                message=f"Mouth is open (gap ratio {ratio:.3f} > {max_gap_ratio}).",
+                details={
+                    "gap": gap,
+                    "width_outer": width_outer,
+                    "width_inner": width_inner,
+                    "norm_width": width,
+                    "gap_ratio": ratio
                 }
             )

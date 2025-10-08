@@ -15,6 +15,7 @@ class Requirement(str, Enum):
     SINGLE_FACE = "SINGLE_FACE"
     LANDMARKS_PRESENT = "LANDMARKS_PRESENT"
     EYES_VISIBLE = "EYES_VISIBLE"
+    MOUTH_CLOSED = "MOUTH_CLOSED"
     # Vi kan tilføjere flere krav senere som fx CENTERED, EYES_VISIBLE, MOUTH_CLOSED, BG_WHITE,
 
 
