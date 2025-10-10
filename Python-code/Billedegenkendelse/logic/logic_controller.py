@@ -1,4 +1,5 @@
 from .is_face_present.face_detector import DetectionVisualizer
+from .is_hat_glasses.hat_glasses_detector import HatGlassesDetector
 from .types import AnalysisReport, CheckResult, Requirement, Severity
 from mediapipe.tasks.python import vision
 from typing import Tuple, Union, Optional, List
@@ -9,6 +10,7 @@ import math
 class LogicController:
     def __init__(self):
         self.face_detector = DetectionVisualizer()
+        self.hat_glasses_detector = HatGlassesDetector()
 
 
     # Utility functions
@@ -58,12 +60,16 @@ class LogicController:
         checks.append(landmarks_present)
 
         # 4 Eyes open -
-        eyes_visible = self.eyes_visible_check(face_landmarker_result)
+        eyes_visible = self._eyes_visible_check(face_landmarker_result)
         checks.append(eyes_visible)
 
         # 5 Mouth closed
-        mouth_closed = self.mouth_closed_check(face_landmarker_result)
+        mouth_closed = self._mouth_closed_check(face_landmarker_result)
         checks.append(mouth_closed)
+
+        # 6 No hat and no glasses
+        hat_glasses_checks = self._check_hats_and_glasses(image_path)
+        checks.extend(hat_glasses_checks)
 
 
 
@@ -144,7 +150,7 @@ class LogicController:
                 details={"faces_with_landmarks": 0}
             )
 
-    def eyes_visible_check(self, result: vision.FaceLandmarkerResult, ear_threshold: float = 0.25) -> CheckResult:
+    def _eyes_visible_check(self, result: vision.FaceLandmarkerResult, ear_threshold: float = 0.25) -> CheckResult:
 
         if not result.face_landmarks or len(result.face_landmarks) == 0:
             return CheckResult(
@@ -210,7 +216,7 @@ class LogicController:
                 }
             )
 
-    def mouth_closed_check(self, result: vision.FaceLandmarkerResult, max_gap_ratio: float = 0.03) -> CheckResult:
+    def _mouth_closed_check(self, result: vision.FaceLandmarkerResult, max_gap_ratio: float = 0.03) -> CheckResult:
         # Check
         if not result.face_landmarks or len(result.face_landmarks) == 0:
             return CheckResult(
@@ -287,3 +293,36 @@ class LogicController:
                 }
             )
 
+
+    def _check_hats_and_glasses(self, image_path: str, threshold: float = 0.5) -> list[CheckResult]:
+        """
+        Run the YOLO hat and glasses detection.
+        Returns two CheckResult objects: NO_HAT and NO_GLASSES. So to add it to the report, we need to use .extend()
+        """
+        yolo_confs = self.hat_glasses_detector.analyze_image(image_path)
+        hat_conf = yolo_confs.get("Hat", 0.0)
+        glasses_conf = yolo_confs.get("Glasses", 0.0)
+
+        no_hat_pass = hat_conf < threshold
+        no_glasses_pass = glasses_conf < threshold
+
+        results = [
+            CheckResult(
+                requirement=Requirement.NO_HAT,
+                passed=no_hat_pass,
+                severity=Severity.ERROR if not no_hat_pass else Severity.INFO,
+                message=("No hat detected." if no_hat_pass
+                         else f"Hat detected (conf {hat_conf:.2f} ≥ {threshold})."),
+                details={"hat_confidence": hat_conf, "threshold": threshold}
+            ),
+            CheckResult(
+                requirement=Requirement.NO_GLASSES,
+                passed=no_glasses_pass,
+                severity=Severity.ERROR if not no_glasses_pass else Severity.INFO,
+                message=("No glasses detected." if no_glasses_pass
+                         else f"Glasses detected (conf {glasses_conf:.2f} ≥ {threshold})."),
+                details={"glasses_confidence": glasses_conf, "threshold": threshold}
+            )
+        ]
+
+        return results
