@@ -150,7 +150,7 @@ class LogicController:
                 details={"faces_with_landmarks": 0}
             )
 
-    def _eyes_visible_check(self, result: vision.FaceLandmarkerResult, ear_threshold: float = 0.25) -> CheckResult:
+    def _eyes_visible_check(self, result: vision.FaceLandmarkerResult, ear_threshold: float = 0.2) -> CheckResult:
 
         if not result.face_landmarks or len(result.face_landmarks) == 0:
             return CheckResult(
@@ -190,7 +190,7 @@ class LogicController:
         # Average EAR for both eyes
         avg_ear = (left_ear + right_ear) / 2.0
 
-        # The EAR is typically around 0.25-0.3 for open eyes and drops towards 0 for closed eyes. - Chatgpt <3
+        # The EAR is typically around 0.25-0.3 for open eyes and drops towards 0 for closed eyes.
         eyes_visible = avg_ear > ear_threshold
 
         if eyes_visible:
@@ -209,7 +209,7 @@ class LogicController:
                 requirement=Requirement.EYES_VISIBLE,
                 passed=False,
                 severity=Severity.ERROR,
-                message="Eyes not visible or too small (may be closed/obstructed).",
+                message=f"Eyes not visible {avg_ear} < {ear_threshold} or too small (may be closed/obstructed).",
                 details={
                     "left_eye_width": left_ear,
                     "right_eye_width": right_ear
