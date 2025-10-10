@@ -10,7 +10,7 @@ class HatGlassesDetector:
                  targets: Set[str] = {"Hat", "Glasses"}):
         if not os.path.isfile(model_path):
             raise FileNotFoundError(f"YOLO model not found at: {model_path}")
-        #This loads the model
+        #This loads the model from our path.
         self.model = YOLO(model_path)
         # class ids are numbered from 0, so here we map id to name like Hat and Glasses
         self.class_names = self.model.names
