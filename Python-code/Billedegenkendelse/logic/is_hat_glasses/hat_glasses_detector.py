@@ -5,6 +5,8 @@ import os
 
 class HatGlassesDetector:
 
+    # For yolo docs, look here https://docs.ultralytics.com/usage/python/
+
     def __init__(self,
                  model_path: str = os.path.join("models", "best.pt"),
                  targets: Set[str] = {"Hat", "Glasses"}):
