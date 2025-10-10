@@ -13,26 +13,18 @@ from logic.logic_controller import LogicController
 from logic.is_face_present.face_detector import DetectionVisualizer
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-
-
 # Denne funktion opretter en mappe, hvis den ikke findes
 def ensure_dir(path: str):
     os.makedirs(path, exist_ok=True)
 
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
 
 
-    print_hi('PyCharm')
-
     # Configuration
-    #IMAGE_FILE_NAME = "woman.jpg"
+    IMAGE_FILE_NAME = "woman.jpg"
     #IMAGE_FILE_NAME = "closedeyes.jpg"
     #IMAGE_FILE_NAME = "man_with_hat.jpg"
-    IMAGE_FILE_NAME = "open_mouth.jpg"
+    #IMAGE_FILE_NAME = "open_mouth.jpg"
 
     IMAGE_FILE = os.path.join("images", IMAGE_FILE_NAME)
 
