@@ -31,7 +31,8 @@ if __name__ == '__main__':
     # Configuration
     #IMAGE_FILE_NAME = "woman.jpg"
     #IMAGE_FILE_NAME = "closedeyes.jpg"
-    IMAGE_FILE_NAME = "man_with_hat.jpg"
+    #IMAGE_FILE_NAME = "man_with_hat.jpg"
+    IMAGE_FILE_NAME = "open_mouth.jpg"
 
     IMAGE_FILE = os.path.join("images", IMAGE_FILE_NAME)
 
