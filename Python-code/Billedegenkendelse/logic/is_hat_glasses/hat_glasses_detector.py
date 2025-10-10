@@ -1,4 +1,3 @@
-# is_hat_glasses/hat_glasses_detector.py
 from typing import Dict, Set
 from ultralytics import YOLO
 from PIL import Image
