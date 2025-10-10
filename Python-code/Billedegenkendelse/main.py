@@ -29,7 +29,8 @@ if __name__ == '__main__':
     print_hi('PyCharm')
 
     # Configuration
-    IMAGE_FILE_NAME = "asian.jpg"
+    #IMAGE_FILE_NAME = "woman.jpg"
+    IMAGE_FILE_NAME = "closedeyes.jpg"
 
     IMAGE_FILE = os.path.join("images", IMAGE_FILE_NAME)
 
