@@ -17,8 +17,10 @@ from logic.is_face_present.face_detector import DetectionVisualizer
 def ensure_dir(path: str):
     os.makedirs(path, exist_ok=True)
 
-if __name__ == '__main__':
 
+
+
+if __name__ == '__main__':
 
     # Configuration
     IMAGE_FILE_NAME = "woman.jpg"
