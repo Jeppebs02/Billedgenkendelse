@@ -83,7 +83,7 @@ class LogicController:
 
     def run_analysis_bytes(self, image_bytes: bytes, threshold: float = 0.5) -> AnalysisReport:
         """
-        In-memory analysis (no filed needed ;) ). Mirrors run_analysis(), but calls *bytes* APIs.
+        In-memory analysis (no filed needed ;) ). Mirrors run_analysis(), but calls *bytes* APIs from face detector and landmarker AND hat_glasses.
         """
         # Face + landmarks (bytes-based)
         face_detector_result = self.face_detector.analyze_bytes(image_bytes)
@@ -106,7 +106,7 @@ class LogicController:
         # 5) Mouth closed
         checks.append(self._mouth_closed_check(face_landmarker_result))
 
-        # 6) No hat and no glasses (bytes-based)
+        # 6) No hat and no glasses
         checks.extend(self._check_hats_and_glasses_bytes(image_bytes, threshold=threshold))
 
         overall_pass = all(c.passed for c in checks)

@@ -62,7 +62,8 @@ def analyze_image():
         if file.mimetype and not file.mimetype.startswith("image/"):
             return jsonify({"error": f"Unexpected content-type: {file.mimetype}"}), 400
 
-        # Default to 0.5, get threshold from form or query param
+        # Default to 0.5, get threshold from form or query param.
+        #TODO: Depending on how we make the frontend, we might need to change this (if we dont use a form)
         raw_thr = request.form.get("threshold") or request.args.get("threshold") or "0.5"
         try:
             threshold = float(raw_thr)
@@ -90,7 +91,7 @@ def analyze_image():
         decision = "APPROVED" if overall_pass else "REJECTED"
         resp["decision"] = decision
 
-        # THIS IS OPTIONAL
+        # THIS IS OPTIONAL but its a summary, we can remove this if you want :)
         resp["summary"] = {
             "face": next(c for c in resp["checks"] if "FACE_PRESENT" in str(c["requirement"]))["passed"],
             "single_face": next(c for c in resp["checks"] if "SINGLE_FACE" in str(c["requirement"]))["passed"],

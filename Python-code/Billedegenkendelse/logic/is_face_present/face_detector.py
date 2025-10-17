@@ -178,7 +178,7 @@ class DetectionVisualizer:
             return vision.FaceDetector.create_from_options(options)
 
         base_options = python.BaseOptions(model_asset_path=self.DETECTOR_MODEL_FILE)
-        # Defaults match your file-based method
+
         return vision.FaceDetector.create_from_options(
             vision.FaceDetectorOptions(
                 base_options=base_options,
@@ -231,7 +231,7 @@ class DetectionVisualizer:
         # Build detector
         detector = self._build_face_detector_options(options)
 
-        # Convert bytes to RGB ndarray (HxWx3, uint8) then to MediaPipe Image
+        # Convert bytes to RGB ndarray then to MediaPipe Image
         rgb = bytes_to_rgb_np(image_bytes)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
 
@@ -325,8 +325,8 @@ class DetectionVisualizer:
 
     def analyze_landmarks_bytes(self, image_bytes: bytes, options: Optional[vision.FaceLandmarkerOptions] = None) -> vision.FaceLandmarkerResult:
         """
-        Bytes → RGB ndarray → MediaPipe Image → FaceLandmarker.detect()
-        Mirrors analyze_landmarks(), but without touching the filesystem.
+        Bytes → RGB ndarray → MediaPipe Image into FaceLandmarker.detect() (just like analyze_landmarks :) )
+        Mirrors analyze_landmarks(), but without saving files
         """
         if not os.path.isfile(self.LANDMARKER_MODEL_FILE):
             raise FileNotFoundError(
@@ -337,7 +337,7 @@ class DetectionVisualizer:
         # Build landmarker
         landmarker = self._build_face_landmarker_options(options)
 
-        # Convert bytes → MediaPipe Image (SRGB)
+        # Convert bytes → MediaPipe Image (RGB)
         rgb = bytes_to_rgb_np(image_bytes)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
 
