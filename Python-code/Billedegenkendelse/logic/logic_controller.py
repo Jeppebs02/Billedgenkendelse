@@ -81,6 +81,41 @@ class LogicController:
             checks=checks
         )
 
+    def run_analysis_bytes(self, image_bytes: bytes, threshold: float = 0.5) -> AnalysisReport:
+        """
+        In-memory analysis (no filed needed ;) ). Mirrors run_analysis(), but calls *bytes* APIs.
+        """
+        # Face + landmarks (bytes-based)
+        face_detector_result = self.face_detector.analyze_bytes(image_bytes)
+        face_landmarker_result = self.face_detector.analyze_landmarks_bytes(image_bytes)
+
+        checks = []
+
+        # 1) Face present
+        checks.append(self._is_face_in_image(face_detector_result))
+
+        # 2) Single face
+        checks.append(self._is_single_face(face_detector_result))
+
+        # 3) Landmarks present
+        checks.append(self._are_landmarks_present(face_landmarker_result))
+
+        # 4) Eyes visible
+        checks.append(self._eyes_visible_check(face_landmarker_result))
+
+        # 5) Mouth closed
+        checks.append(self._mouth_closed_check(face_landmarker_result))
+
+        # 6) No hat and no glasses (bytes-based)
+        checks.extend(self._check_hats_and_glasses_bytes(image_bytes, threshold=threshold))
+
+        overall_pass = all(c.passed for c in checks)
+        return AnalysisReport(
+            image="<bytes>",
+            passed=overall_pass,
+            checks=checks
+        )
+
 
 
 
@@ -326,3 +361,34 @@ class LogicController:
         ]
 
         return results
+
+    def _check_hats_and_glasses_bytes(self, image_bytes: bytes, threshold: float = 0.5) -> list[CheckResult]:
+        """
+        YOLO hat/glasses on in-memory bytes.
+        Returns two CheckResult objects: NO_HAT and NO_GLASSES. So to add it to the report, we need to use .extend()
+        """
+        yolo_confs = self.hat_glasses_detector.analyze_bytes(image_bytes)
+        hat_conf = yolo_confs.get("Hat", 0.0)
+        glasses_conf = yolo_confs.get("Glasses", 0.0)
+
+        no_hat_pass = hat_conf < threshold
+        no_glasses_pass = glasses_conf < threshold
+
+        return [
+            CheckResult(
+                requirement=Requirement.NO_HAT,
+                passed=no_hat_pass,
+                severity=Severity.ERROR if not no_hat_pass else Severity.INFO,
+                message=("No hat detected." if no_hat_pass
+                         else f"Hat detected (conf {hat_conf:.2f} ≥ {threshold})."),
+                details={"hat_confidence": hat_conf, "threshold": threshold}
+            ),
+            CheckResult(
+                requirement=Requirement.NO_GLASSES,
+                passed=no_glasses_pass,
+                severity=Severity.ERROR if not no_glasses_pass else Severity.INFO,
+                message=("No glasses detected." if no_glasses_pass
+                         else f"Glasses detected (conf {glasses_conf:.2f} ≥ {threshold})."),
+                details={"glasses_confidence": glasses_conf, "threshold": threshold}
+            ),
+        ]
