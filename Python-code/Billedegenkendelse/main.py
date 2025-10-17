@@ -9,7 +9,7 @@ from torch.fx.experimental.migrate_gradual_types.constraint_transformation impor
 
 
 def prepare_data(project_root: Path):
-    zip_path = project_root / "data" / "data.zip"
+    zip_path = project_root / "data" / "data_hat.zip"
     extract_to = project_root / "data" / "custom_data"
 
     extract_to.mkdir(parents=True, exist_ok=True)
@@ -74,7 +74,7 @@ def train_model(project_root: Path):
         "yolo", "detect", "train",
         f"data={str(data_yaml)}",
         "model=yolo11s.pt",
-        "epochs=3",
+        "epochs=60",
         "imgsz=480",
         f"project={str(project_root)}",  # ensure runs/ lives under your project
         "name=train"  # runs/detect/train/...
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     print(f"Project root: {project_root}")
 
     # 1) Prepare data (unzips & splits)
-    prepare_data(project_root)
+    #prepare_data(project_root)
 
     # 2) Create data.yaml (requires classes.txt)
     data_yaml = create_data_yaml(project_root)
@@ -95,6 +95,6 @@ if __name__ == "__main__":
     # 3) Train — point YOLO to the absolute path of data.yaml
     train_model(project_root)
 
-    test_model(project_root)
+    #test_model(project_root)
 
 
