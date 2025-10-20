@@ -56,7 +56,7 @@ def test_model(project_root: Path):
     print("Testing the trained model...")
     # run yolo subprocess to test the model
 
-    best = project_root / "train" / "weights" / "best.pt"
+    best = project_root / "train5" / "weights" / "best.pt"
     subprocess.run([
         "yolo", "detect", "predict",
         f"model={str(best)}",
@@ -64,7 +64,7 @@ def test_model(project_root: Path):
         "save=True"
     ], check=True)
 
-    for image_path in glob.glob(f'/content/runs/detect/predict/*.jpg')[:10]:
+    for image_path in glob.glob(f'/content/runs/detect/predict/*.jpg')[:20]:
         display(Image(filename=image_path, height=400))
         print('\n')
 
@@ -73,11 +73,11 @@ def train_model(project_root: Path):
     subprocess.run([
         "yolo", "detect", "train",
         f"data={str(data_yaml)}",
-        "model=yolo11s.pt",
+        "model=yolo11n.pt",
         "epochs=60",
         "imgsz=480",
         f"project={str(project_root)}",  # ensure runs/ lives under your project
-        "name=train"  # runs/detect/train/...
+        "name=train5"  # runs/detect/train/...
     ], check=True, cwd=project_root)
 
 if __name__ == "__main__":
@@ -95,6 +95,6 @@ if __name__ == "__main__":
     # 3) Train — point YOLO to the absolute path of data.yaml
     train_model(project_root)
 
-    #test_model(project_root)
+    test_model(project_root)
 
 
