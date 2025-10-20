@@ -1,0 +1,6 @@
+path: C:\Users\mitde\Documents\GitHub\Billedgenkendelse\Python-code\Billedegenkendelse\data
+train: train/images
+val: validation/images
+nc: 1
+names:
+- Glasses

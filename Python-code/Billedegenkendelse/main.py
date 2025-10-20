@@ -73,8 +73,8 @@ def train_model(project_root: Path):
     subprocess.run([
         "yolo", "detect", "train",
         f"data={str(data_yaml)}",
-        "model=yolo11s.pt",
-        "epochs=3",
+        "model=yolo11n.pt",
+        "epochs=60",
         "imgsz=480",
         f"project={str(project_root)}",  # ensure runs/ lives under your project
         "name=train"  # runs/detect/train/...
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     print(f"Project root: {project_root}")
 
     # 1) Prepare data (unzips & splits)
-    prepare_data(project_root)
+    #prepare_data(project_root)
 
     # 2) Create data.yaml (requires classes.txt)
     data_yaml = create_data_yaml(project_root)
@@ -95,6 +95,6 @@ if __name__ == "__main__":
     # 3) Train — point YOLO to the absolute path of data.yaml
     train_model(project_root)
 
-    test_model(project_root)
+    #test_model(project_root)
 
 
