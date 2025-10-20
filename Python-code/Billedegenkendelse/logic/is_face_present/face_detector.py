@@ -9,6 +9,7 @@ from mediapipe.tasks.python import vision
 from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
 import matplotlib.pyplot as plt
+from logic.utils.image_io import bytes_to_rgb_np
 
 
 class DetectionVisualizer:
@@ -172,6 +173,21 @@ class DetectionVisualizer:
 
     # Detection functions
 
+    def _build_face_detector_options(self, options: Optional[vision.FaceDetectorOptions] = None):
+        if options is not None:
+            return vision.FaceDetector.create_from_options(options)
+
+        base_options = python.BaseOptions(model_asset_path=self.DETECTOR_MODEL_FILE)
+
+        return vision.FaceDetector.create_from_options(
+            vision.FaceDetectorOptions(
+                base_options=base_options,
+                min_detection_confidence=0.5,
+                running_mode=vision.RunningMode.IMAGE,
+                min_suppression_threshold=0.3,
+            )
+        )
+
     def analyze_image(self, IMAGE_FILE_NAME: str, options: Optional[vision.FaceDetectorOptions] = None) -> vision.FaceDetectorResult:
         """
         Analyzes an image to detect faces and returns the raw result.
@@ -190,29 +206,8 @@ class DetectionVisualizer:
 
         # Create detector and config
 
-        if options is None:
-            base_options = python.BaseOptions(model_asset_path=self.DETECTOR_MODEL_FILE)
-            # "The minimum confidence score for the face detection to be considered successful."
-            # Default er 0.5
-            detection_confidence = 0.5
+        detector = self._build_face_detector_options(options)
 
-            # Default er image men vi kan også bruge VIDEO eller LIVE_STREAM
-            running_mode = vision.RunningMode.IMAGE
-
-            # "The minimum non-maximum-suppression threshold for face detection to be considered overlapped."
-            # Default er 0.3
-            min_suppression_threshold = 0.3
-
-            options = vision.FaceDetectorOptions(base_options=base_options,
-                                                 min_detection_confidence=detection_confidence,
-                                                 running_mode=running_mode,
-                                                 min_suppression_threshold=min_suppression_threshold)
-
-            detector = vision.FaceDetector.create_from_options(options)
-
-
-        else:
-            detector = vision.FaceDetector.create_from_options(options)
 
         # Load into mediapipe
         mp_image = mp.Image.create_from_file(IMAGE_FILE)
@@ -220,6 +215,28 @@ class DetectionVisualizer:
         # Run detection
         detection_result = detector.detect(mp_image)
 
+        return detection_result
+
+    def analyze_bytes(self, image_bytes: bytes, options: Optional[vision.FaceDetectorOptions] = None) -> vision.FaceDetectorResult:
+        """
+        Bytes → RGB ndarray → MediaPipe Image → FaceDetector.detect()
+        Mirrors analyze_image(), but without touching the filesystem.
+        """
+        if not os.path.isfile(self.DETECTOR_MODEL_FILE):
+            raise FileNotFoundError(
+                f"Model not found: {self.DETECTOR_MODEL_FILE}\n"
+                "Place a MediaPipe face detection .tflite model at this path."
+            )
+
+        # Build detector
+        detector = self._build_face_detector_options(options)
+
+        # Convert bytes to RGB ndarray then to MediaPipe Image
+        rgb = bytes_to_rgb_np(image_bytes)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+
+        # Run detection
+        detection_result = detector.detect(mp_image)
         return detection_result
 
     def analyze_and_annotate_image(self, IMAGE_FILE_NAME: str, OUT_FILE_NAME: str, options: Optional[vision.FaceDetectorOptions] = None) -> vision.FaceDetectorResult:
@@ -248,7 +265,23 @@ class DetectionVisualizer:
 
         return detection_result
 
+
     # Landmark functions
+
+    def _build_face_landmarker_options(self, options: Optional[vision.FaceLandmarkerOptions] = None):
+        if options is not None:
+            return vision.FaceLandmarker.create_from_options(options)
+
+        base_options = python.BaseOptions(model_asset_path=self.LANDMARKER_MODEL_FILE)
+        return vision.FaceLandmarker.create_from_options(
+            vision.FaceLandmarkerOptions(
+                base_options=base_options,
+                output_face_blendshapes=True,
+                output_facial_transformation_matrixes=True,
+                running_mode=vision.RunningMode.IMAGE,
+                num_faces=1,
+            )
+        )
 
     def analyze_landmarks(self, IMAGE_FILE_NAME: str, options: Optional[vision.FaceLandmarkerOptions] = None) -> vision.FaceLandmarkerResult:
         """
@@ -288,6 +321,28 @@ class DetectionVisualizer:
         # Run detection
         detection_result = landmarker.detect(mp_image)
 
+        return detection_result
+
+    def analyze_landmarks_bytes(self, image_bytes: bytes, options: Optional[vision.FaceLandmarkerOptions] = None) -> vision.FaceLandmarkerResult:
+        """
+        Bytes → RGB ndarray → MediaPipe Image into FaceLandmarker.detect() (just like analyze_landmarks :) )
+        Mirrors analyze_landmarks(), but without saving files
+        """
+        if not os.path.isfile(self.LANDMARKER_MODEL_FILE):
+            raise FileNotFoundError(
+                f"Landmarker model not found: {self.LANDMARKER_MODEL_FILE}\n"
+                "Place the face landmarker .task model at this path."
+            )
+
+        # Build landmarker
+        landmarker = self._build_face_landmarker_options(options)
+
+        # Convert bytes → MediaPipe Image (RGB)
+        rgb = bytes_to_rgb_np(image_bytes)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+
+        # Run detection
+        detection_result = landmarker.detect(mp_image)
         return detection_result
 
     def analyze_and_annotate_landmarks(self, IMAGE_FILE_NAME: str, OUT_FILE_NAME: str, options: Optional[vision.FaceLandmarkerOptions] = None) -> vision.FaceLandmarkerResult:

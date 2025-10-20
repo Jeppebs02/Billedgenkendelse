@@ -2,6 +2,7 @@ from typing import Dict, Set
 from ultralytics import YOLO
 from PIL import Image
 import os
+from logic.utils.image_io import bytes_to_pil
 
 class HatGlassesDetector:
 
@@ -46,4 +47,20 @@ class HatGlassesDetector:
             if cls_name in confs and conf > confs[cls_name]:
                 confs[cls_name] = conf
 
+        return confs
+
+
+
+    def analyze_bytes(self, image_bytes: bytes) -> Dict[str, float]:
+        """Return max confidence per target from in-memory bytes. Instead of an image"""
+        img: Image.Image = bytes_to_pil(image_bytes)
+        result = self.model(img, verbose=False)[0]
+
+        confs = {name: 0.0 for name in self.targets}
+        for box in result.boxes:
+            cls_id = int(box.cls[0])
+            conf = float(box.conf[0])
+            cls_name = self.class_names.get(cls_id, str(cls_id))
+            if cls_name in confs and conf > confs[cls_name]:
+                confs[cls_name] = conf
         return confs
