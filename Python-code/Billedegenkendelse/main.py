@@ -23,7 +23,7 @@ def ensure_dir(path: str):
 if __name__ == '__main__':
 
     # Configuration
-    IMAGE_FILE_NAME = "woman.jpg"
+    IMAGE_FILE_NAME = "00b4457d-963a-469a-aed5-6b1ad055fa32.jpg"
     #IMAGE_FILE_NAME = "closedeyes.jpg"
     #IMAGE_FILE_NAME = "man_with_hat.jpg"
     #IMAGE_FILE_NAME = "open_mouth.jpg"
