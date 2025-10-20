@@ -64,7 +64,7 @@ def test_model(project_root: Path):
         "save=True"
     ], check=True)
 
-    for image_path in glob.glob(f'/content/runs/detect/predict/*.jpg')[:10]:
+    for image_path in glob.glob(f'/content/runs/detect/predict/*.jpg')[:40]:
         display(Image(filename=image_path, height=400))
         print('\n')
 
