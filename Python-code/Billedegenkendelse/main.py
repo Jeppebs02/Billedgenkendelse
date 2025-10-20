@@ -77,7 +77,7 @@ def train_model(project_root: Path):
         "epochs=60",
         "imgsz=480",
         f"project={str(project_root)}",  # ensure runs/ lives under your project
-        "name=train5"  # runs/detect/train/...
+        "name=train"  # runs/detect/train/...
     ], check=True, cwd=project_root)
 
 if __name__ == "__main__":
@@ -95,6 +95,6 @@ if __name__ == "__main__":
     # 3) Train — point YOLO to the absolute path of data.yaml
     train_model(project_root)
 
-    test_model(project_root)
+    #test_model(project_root)
 
 
