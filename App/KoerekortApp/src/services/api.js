@@ -1,33 +1,24 @@
-// Tip: Sæt endpoint via .env: VITE_API_BASE
-const BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
+// src/services/api.js
+const BASE = import.meta.env.VITE_API_BASE ?? 'http://192.168.1.89:5001'
 
-export async function validatePhoto({ file }) {
+export async function analyzePhoto({ file, threshold = 0.5 }) {
   const form = new FormData()
-  form.append('file', file) // backend key: "file"
+  form.append('file', file)
+  form.append('threshold', String(threshold))
 
-  const res = await fetch(`${BASE}/analyze`, {
-    method: 'POST',
-    body: form,
-  })
+  const res = await fetch(`${BASE}/analyze`, { method: 'POST', body: form })
 
-  if (!res.ok) {
+  // prøv altid at parse JSON – også ved 422
+  let data
+  try { data = await res.json() }
+  catch {
     const text = await res.text().catch(() => '')
-    throw new Error(text || `API error ${res.status}`)
+    throw new Error(text || `Uventet svar (${res.status})`)
   }
-  /** Forventet respons (justér til din API):
-   * {
-   *   id: "req_123",
-   *   status: "ok" | "fail" | "warn",
-   *   score: 0.0..1.0,
-   *   summary: "Kort opsummering",
-   *   checks: [
-   *     { key:"background_uniform", label:"Ensartet baggrund", status:"pass|fail|warn", message:"..." },
-   *     { key:"face_visible", label:"Ansigt tydeligt", status:"pass", message:"" },
-   *     ...
-   *   ],
-   *   meta: { width:1024, height:1024, mime:"image/jpeg", size_bytes: 123456 },
-   *   report_url: "https://.../report.pdf" // valgfrit
-   * }
-   */
-  return await res.json()
+
+  // 200 = APPROVED, 422 = REJECTED (gyldigt svar)
+  if (!res.ok && res.status !== 422) {
+    throw new Error(data?.error || data?.message || `API-fejl (${res.status})`)
+  }
+  return { status: res.status, data }
 }
