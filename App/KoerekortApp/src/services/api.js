@@ -5,7 +5,7 @@ export async function validatePhoto({ file }) {
   const form = new FormData()
   form.append('file', file) // backend key: "file"
 
-  const res = await fetch(`${BASE}/validate`, {
+  const res = await fetch(`${BASE}/analyze`, {
     method: 'POST',
     body: form,
   })
