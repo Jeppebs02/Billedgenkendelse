@@ -3,3 +3,4 @@ opencv-python
 mediapipe
 matplotlib
 flask
+flask_cors

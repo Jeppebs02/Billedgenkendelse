@@ -8,6 +8,7 @@ from mediapipe.tasks.python import vision
 from logic.logic_controller import LogicController
 
 from flask import Flask, request, jsonify, flash, redirect, url_for
+from flask_cors import CORS
 
 app = Flask(__name__)
 logic = LogicController()
@@ -107,6 +108,9 @@ def analyze_image():
     except Exception as e:
         # TODO: replace with proper logging
         return jsonify({"error": str(e)}), 500
+
+
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 

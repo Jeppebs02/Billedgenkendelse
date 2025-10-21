@@ -104,7 +104,8 @@ function increment(){
   <WelcomeItem>
 
     <a>Clicks: {{number}}</a>
-    <button @click=increment()>Click</button>
+    <button @click=increment>Click</button>
+    <button v-on:click="increment">click 2</button>
 
   </WelcomeItem>
 </template>
