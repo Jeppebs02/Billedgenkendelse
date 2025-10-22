@@ -4,3 +4,4 @@ mediapipe
 matplotlib
 flask
 flask_cors
+ultralytics
