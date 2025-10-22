@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-surface text-ink">
     <header class="container py-4 flex items-center justify-between">
       <h1 class="text-xl font-semibold">Kørekortbillede • Validator</h1>
-      <nav class="text-sm opacity-70">SPA • Vue 3</nav>
+
     </header>
     <main class="container py-6">
       <RouterView />

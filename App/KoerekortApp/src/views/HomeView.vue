@@ -97,11 +97,10 @@
     <section v-if="!data" class="card" style="padding:16px">
       <h3 style="margin-top:0">Krav (kort fortalt)</h3>
       <ul class="text-muted" style="margin:0 0 0 1rem;line-height:1.6">
-        <li>Ensartet lys baggrund</li>
+        <li>Åben øjne</li>
         <li>Ansigt tydeligt, neutralt udtryk</li>
-        <li>Ingen hat/solbriller (medmindre tilladt)</li>
-        <li>Øjne åbne og synlige</li>
-        <li>God skarphed og korrekt beskæring</li>
+        <li>Ingen hat/solbriller</li>
+        <li>Lukket mund</li>
       </ul>
     </section>
 
