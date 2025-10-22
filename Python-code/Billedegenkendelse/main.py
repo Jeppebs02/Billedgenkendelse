@@ -70,10 +70,11 @@ def test_model(project_root: Path):
 
 
 def train_model(project_root: Path):
+    best = project_root / "train_v11n" / "weights" / "best.pt"
     subprocess.run([
         "yolo", "detect", "train",
         f"data={str(data_yaml)}",
-        "model=yolo11n.pt",
+        f"model={str(best)}",
         "epochs=60",
         "imgsz=480",
         f"project={str(project_root)}",  # ensure runs/ lives under your project
@@ -95,6 +96,6 @@ if __name__ == "__main__":
     # 3) Train — point YOLO to the absolute path of data.yaml
     train_model(project_root)
 
-    test_model(project_root)
+    #test_model(project_root)
 
 
