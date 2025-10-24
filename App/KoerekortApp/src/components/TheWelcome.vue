@@ -105,7 +105,7 @@ function increment(){
 
     <a>Clicks: {{number}}</a>
     <button @click=increment>Click</button>
-    <button v-on:click="increment">click 2</button>
+    <button v-on:click="$router.push('/camera')">To Camera</button>
 
   </WelcomeItem>
 </template>
