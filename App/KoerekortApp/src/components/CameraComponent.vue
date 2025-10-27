@@ -15,7 +15,6 @@ const loading = ref(false)
 const serverResponse = ref(null)
 const httpMsg = ref('')
 
-
 async function takePicture() {
   httpMsg.value = ''
   serverResponse.value = null
@@ -96,25 +95,49 @@ async function addPhoto() {
       </ion-button>
     </form>
 
-
-
-    <!-- Server Feedback -->
-    <p v-if="httpMsg" style="color:#b00020;">{{ httpMsg }}</p>
-
-    <details v-if="serverResponse">
-      <summary>Server response</summary>
-      <pre style="white-space: pre-wrap;">{{ JSON.stringify(serverResponse, null, 2) }}</pre>
-    </details>
-  </div>
-</template>
-
 <style scoped>
+/* === Layout centreret === */
+.page-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 80px);
+  background: #fff;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  max-width: 360px;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* === Billede med fast størrelse === */
+.preview {
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 2px solid #ddd;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+/* === Knapper === */
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
 .cool-btn {
   --background: linear-gradient(135deg, #000 0%, #fbf6f6 60%);
-
   --color: black;
   --border-radius: 12px;
-  --box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35);
   --padding-top: 14px;
   --padding-bottom: 14px;
   --padding-start: 20px;
@@ -125,14 +148,24 @@ async function addPhoto() {
   text-transform: uppercase;
   transition: transform 0.15s ease, box-shadow 0.3s ease;
 }
-.cool-btn::part(native) {
-  backdrop-filter: blur(8px);
+
+
+
+
+/* === Feedback === */
+.error {
+  color: #d20000;
+  text-align: center;
+  font-size: 14px;
+  margin-top: 10px;
 }
-/* Ionicon style override */
-ion-icon {
-  font-size: 1.2em;
-  margin-right: 6px;
+
+.response {
+  width: 100%;
+  word-wrap: break-word;
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 13px;
 }
 </style>
-
-
