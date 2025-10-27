@@ -18,6 +18,8 @@
     "@capacitor/camera": "^7.0.2",
     "@capacitor/core": "^7.4.3",
     "@capacitor/ios": "^7.4.3",
+    "@ionic/vue": "^8.7.7",
+    "@ionic/vue-router": "^8.7.7",
     "vue": "^3.5.22",
     "vue-router": "^4.5.1"
   },
