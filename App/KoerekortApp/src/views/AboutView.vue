@@ -1,7 +1,20 @@
+<script setup>
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/vue'
+</script>
+
 <template>
-  <div class="about">
-    <h1>This is an about page</h1>
-  </div>
+  <ion-page>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>About</ion-title>
+      </ion-toolbar>
+    </ion-header>
+
+    <ion-content class="ion-padding">
+      <p>This is an about page</p>
+
+    </ion-content>
+  </ion-page>
 </template>
 
 <style>

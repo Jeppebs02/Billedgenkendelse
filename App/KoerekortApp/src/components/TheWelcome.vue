@@ -6,6 +6,8 @@ import EcosystemIcon from './icons/IconEcosystem.vue'
 import CommunityIcon from './icons/IconCommunity.vue'
 import SupportIcon from './icons/IconSupport.vue'
 import { ref } from 'vue'
+import { IonButton } from '@ionic/vue';
+
 
 const openReadmeInEditor = () => fetch('/__open-in-editor?file=README.md')
 
@@ -18,6 +20,7 @@ function increment(){
 </script>
 
 <template>
+
   <WelcomeItem>
     <template #icon>
       <DocumentationIcon />
@@ -105,7 +108,10 @@ function increment(){
 
     <a>Clicks: {{number}}</a>
     <button @click=increment>Click</button>
-    <button v-on:click="$router.push('/camera')">To Camera</button>
+    <ion-button router-link="/camera">To Camera</ion-button>
+
+
 
   </WelcomeItem>
+
 </template>
