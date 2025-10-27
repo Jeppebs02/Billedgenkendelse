@@ -1,11 +1,11 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router'
-import HomeView from '../views/HomeView.vue'
-import CameraView from '../views/CameraView.vue'
 
+import CameraView from '../views/CameraView.vue'
+import ResultView from '../views/ResultView.vue'
 
 const routes = [
-  { path: '/', component: HomeView },
-  { path: '/camera', component: CameraView },
+  { path: '/', component: CameraView },
+  { path: '/result', component:ResultView  },
 ]
 
 const router = createRouter({

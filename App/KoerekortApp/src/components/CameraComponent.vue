@@ -2,6 +2,8 @@
 <script setup>
 import { ref } from 'vue'
 import { Camera, CameraResultType } from '@capacitor/camera'
+import { IonButton } from '@ionic/vue';
+
 
 // Preview
 const imageSrc = ref(null)
@@ -34,20 +36,6 @@ async function takePicture() {
     lastBlob.value = null
   }
 }
-
-// This function will be run on the "changed" event in the form
-function onFilePicked(e) {
-  httpMsg.value = ''
-  serverResponse.value = null
-
-  const file = e.target.files?.[0]
-  if (!file) return
-
-  lastBlob.value = file
-  //preview
-  imageSrc.value = URL.createObjectURL(file)
-}
-
 
 async function addPhoto() {
   httpMsg.value = ''
@@ -91,21 +79,7 @@ async function addPhoto() {
 
 <template>
   <div style="display:grid; gap:12px; max-width: 420px;">
-    <!-- Capture with Capacitor -->
-    <button @click="takePicture">Take photo</button>
 
-    <!-- Or pick a file :) -->
-    <label>
-      Or choose a file:
-      <input
-        type="file"
-        accept="image/*"
-        capture="environment"
-        @change="onFilePicked"
-      />
-    </label>
-
-    <!-- Preview -->
     <img
       v-if="imageSrc"
       :src="imageSrc"
@@ -115,16 +89,14 @@ async function addPhoto() {
 
     <!-- The “form” UI -->
     <form @submit.prevent="addPhoto" enctype="multipart/form-data" style="display:grid; gap: 8px;">
-      <label>
-        Threshold:
-        <input type="number" step="0.01" min="0" max="1" v-model="threshold" />
-      </label>
-
-      <button type="submit" :disabled="loading">
+      <ion-button class="cool-btn" @click="takePicture">Upload photo</ion-button>
+      <ion-button class="cool-btn" type="submit" :disabled="loading">
         <!-- if loading is true, show Analyzing, if false show Analyze photo -->
         {{ loading ? 'Analyzing...' : 'Analyze photo' }}
-      </button>
+      </ion-button>
     </form>
+
+
 
     <!-- Server Feedback -->
     <p v-if="httpMsg" style="color:#b00020;">{{ httpMsg }}</p>
@@ -137,5 +109,30 @@ async function addPhoto() {
 </template>
 
 <style scoped>
-/* optional styling */
+.cool-btn {
+  --background: linear-gradient(135deg, #000 0%, #fbf6f6 60%);
+
+  --color: black;
+  --border-radius: 12px;
+  --box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35);
+  --padding-top: 14px;
+  --padding-bottom: 14px;
+  --padding-start: 20px;
+  --padding-end: 20px;
+  --ripple-color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: transform 0.15s ease, box-shadow 0.3s ease;
+}
+.cool-btn::part(native) {
+  backdrop-filter: blur(8px);
+}
+/* Ionicon style override */
+ion-icon {
+  font-size: 1.2em;
+  margin-right: 6px;
+}
 </style>
+
+
