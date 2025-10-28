@@ -16,7 +16,7 @@ const formattedJson = computed(() =>
 function reset(){
   dataStore.setJsonResult(null)
   dataStore.setImageSrc(null)
-  ionRouter.navigate('/result', 'forward', 'replace');
+  ionRouter.navigate('/', 'forward', 'replace');
 }
 </script>
 
