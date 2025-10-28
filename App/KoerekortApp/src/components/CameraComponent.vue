@@ -81,7 +81,8 @@ async function addPhoto() {
     httpMsg.value = String(err)
   } finally {
     loading.value = false
-    ionrouter.push(['/result'])
+    ionrouter.navigate('/result', 'forward', 'replace');
+
   }
 }
 </script>
