@@ -2,8 +2,9 @@
 <script setup>
 import { ref } from 'vue'
 import { Camera, CameraResultType } from '@capacitor/camera'
-import { IonButton } from '@ionic/vue';
+import { IonButton, useIonRouter } from '@ionic/vue';
 import { useDataStore } from '@/stores/dataStore.js'
+
 
 
 // Preview
@@ -16,7 +17,7 @@ const loading = ref(false)
 const serverResponse = ref(null)
 const httpMsg = ref('')
 const dataStore = useDataStore()
-
+const ionrouter = useIonRouter()
 
 async function takePicture() {
   httpMsg.value = ''
@@ -80,6 +81,7 @@ async function addPhoto() {
     httpMsg.value = String(err)
   } finally {
     loading.value = false
+    ionrouter.push(['/result'])
   }
 }
 </script>
