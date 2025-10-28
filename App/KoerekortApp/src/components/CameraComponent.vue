@@ -67,6 +67,8 @@ async function addPhoto() {
     const data = await resp.json()
     serverResponse.value = data
 
+    dataStore.setJsonResult(serverResponse.value)
+
     if (!resp.ok) {
       // 422 "Unprocessable Entity" is rejected
       httpMsg.value = data?.error || `Server returned status ${resp.status}`
