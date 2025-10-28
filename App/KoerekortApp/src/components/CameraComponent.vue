@@ -3,6 +3,7 @@
 import { ref } from 'vue'
 import { Camera, CameraResultType } from '@capacitor/camera'
 import { IonButton } from '@ionic/vue';
+import { useDataStore } from '@/stores/dataStore.js'
 
 
 // Preview
@@ -14,6 +15,7 @@ const threshold = ref('0.5')
 const loading = ref(false)
 const serverResponse = ref(null)
 const httpMsg = ref('')
+const dataStore = useDataStore()
 
 
 async function takePicture() {
@@ -27,14 +29,17 @@ async function takePicture() {
   })
 
   imageSrc.value = photo.webPath || null
+  dataStore.setImageSrc(photo.webPath)
 
   // Convert the captured image URL to a Blob so it can be uploaded :)
   if (photo.webPath) {
     const res = await fetch(photo.webPath)
     lastBlob.value = await res.blob()
+
   } else {
     lastBlob.value = null
   }
+
 }
 
 async function addPhoto() {

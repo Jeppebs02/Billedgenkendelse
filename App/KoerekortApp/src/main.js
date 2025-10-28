@@ -1,6 +1,7 @@
 import './assets/main.css'
 
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 import { IonicVue } from '@ionic/vue';
 import App from './App.vue'
 import router from './router'
@@ -20,7 +21,10 @@ import '@ionic/vue/css/text-transformation.css';
 import '@ionic/vue/css/flex-utils.css';
 import '@ionic/vue/css/display.css';
 
+const pinia = createPinia()
 const app = createApp(App)
+
+app.use(pinia)
 app.use(IonicVue)
 app.use(router)
 
