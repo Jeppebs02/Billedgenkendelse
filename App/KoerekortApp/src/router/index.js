@@ -5,7 +5,7 @@ import ResultView from '../views/ResultView.vue'
 
 const routes = [
   { path: '/', component: CameraView },
-  { path: '/result', component:ResultView  },
+  { path: '/result', component: ResultView },
 ]
 
 const router = createRouter({
