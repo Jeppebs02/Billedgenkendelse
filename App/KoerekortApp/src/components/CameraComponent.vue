@@ -7,6 +7,7 @@ import { useDataStore } from '@/stores/dataStore.js'
 
 
 
+
 // Preview
 const imageSrc = ref(null)
 // Bytes to be uploaded
@@ -81,7 +82,7 @@ async function addPhoto() {
     httpMsg.value = String(err)
   } finally {
     loading.value = false
-    ionrouter.navigate('/result', 'forward', 'replace');
+     ionrouter.navigate('/result', 'forward', 'replace');
 
   }
 }
