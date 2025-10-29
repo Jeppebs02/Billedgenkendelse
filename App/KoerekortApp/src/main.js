@@ -20,9 +20,12 @@ import '@ionic/vue/css/text-alignment.css';
 import '@ionic/vue/css/text-transformation.css';
 import '@ionic/vue/css/flex-utils.css';
 import '@ionic/vue/css/display.css';
+import './styles/global.css'
 
 const pinia = createPinia()
 const app = createApp(App)
+
+
 
 app.use(pinia)
 app.use(IonicVue)

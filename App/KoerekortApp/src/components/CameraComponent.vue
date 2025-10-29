@@ -119,31 +119,4 @@ async function addPhoto() {
   </div>
 </template>
 
-<style scoped>
-.cool-btn {
-  --background: linear-gradient(135deg, #000 0%, #fbf6f6 60%);
-
-  --color: black;
-  --border-radius: 12px;
-  --box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35);
-  --padding-top: 14px;
-  --padding-bottom: 14px;
-  --padding-start: 20px;
-  --padding-end: 20px;
-  --ripple-color: rgba(255, 255, 255, 0.5);
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  transition: transform 0.15s ease, box-shadow 0.3s ease;
-}
-.cool-btn::part(native) {
-  backdrop-filter: blur(8px);
-}
-/* Ionicon style override */
-ion-icon {
-  font-size: 1.2em;
-  margin-right: 6px;
-}
-</style>
-
 
