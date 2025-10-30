@@ -8,7 +8,11 @@ import ResultComponent from '../components/ResultComponent.vue'
   <ion-page>
     <ion-header>
       <ion-toolbar color="dark">
-        <ion-title>Result</ion-title>
+        <div class="toolbar-grid">
+          <div></div>
+          <ion-title>Driver's License or Nah?</ion-title>
+          <div></div>
+        </div>
       </ion-toolbar>
     </ion-header>
 

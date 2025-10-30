@@ -91,6 +91,7 @@ async function addPhoto() {
 <template>
   <div class="responsive-grid">
     <div class="card">
+      <!-- image -->
       <img
         v-if="imageSrc"
         :src="imageSrc"

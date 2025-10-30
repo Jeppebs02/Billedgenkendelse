@@ -82,3 +82,31 @@ ion-icon {
   display: block;
   margin: 0 auto;
 }
+
+/* Titel styling */
+.title-style {
+  text-align: center;
+  width: 100%;
+}
+
+.toolbar-grid {
+  position: absolute;
+  inset: 0;                    /* full toolbar area */
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 70%) 1fr;  /* 3 fractions, middle capped at 70% */
+  align-items: center;
+  pointer-events: none;        /* let toolbar buttons remain clickable */
+}
+
+/* Title goes in the middle column and is centered */
+.toolbar-grid ion-title {
+  grid-column: 2;
+  justify-self: center;
+  width: 100%;
+  text-align: center;
+  pointer-events: auto;        /* title remains interactive if needed */
+  white-space: nowrap;         /* optional: prevent wrapping */
+  overflow: hidden;            /* optional with nowrap */
+  text-overflow: ellipsis;     /* optional with nowrap */
+}
+
