@@ -30,7 +30,7 @@ function reset(){
       <h3>JSON Result</h3>
       <pre>{{ formattedJson }}</pre>
 
-      <ion-button class="cool-btn" @click="reset">Reset</ion-button>
+      <ion-button class="cool-btn" @click="reset">Try with a new photo</ion-button>
     </div>
   </div>
 </template>

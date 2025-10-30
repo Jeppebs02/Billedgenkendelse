@@ -7,7 +7,7 @@ import ResultComponent from '../components/ResultComponent.vue'
 <template>
   <ion-page>
     <ion-header>
-      <ion-toolbar>
+      <ion-toolbar color="dark">
         <ion-title>Result</ion-title>
       </ion-toolbar>
     </ion-header>

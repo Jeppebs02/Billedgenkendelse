@@ -135,7 +135,7 @@ class LogicController:
                 requirement=Requirement.FACE_PRESENT,
                 passed=False,
                 severity=Severity.ERROR,
-                message="No faces detected.",
+                message="No face detected.",
                 details={"count": 0}
             )
 
@@ -181,7 +181,7 @@ class LogicController:
                 requirement=Requirement.LANDMARKS_PRESENT,
                 passed=False,
                 severity=Severity.ERROR,
-                message="No face landmarks detected (face not fully visible).",
+                message="Face not fully visible in image",
                 details={"faces_with_landmarks": 0}
             )
 
@@ -244,7 +244,7 @@ class LogicController:
                 requirement=Requirement.EYES_VISIBLE,
                 passed=False,
                 severity=Severity.ERROR,
-                message=f"Eyes not visible {avg_ear} < {ear_threshold} or too small (may be closed/obstructed).",
+                message=f"Eyes closed or not visible.",
                 details={
                     "left_eye_width": left_ear,
                     "right_eye_width": right_ear
@@ -288,7 +288,7 @@ class LogicController:
                 requirement=Requirement.MOUTH_CLOSED,
                 passed=False,
                 severity=Severity.ERROR,
-                message="Could not find expected mouth landmarks.",
+                message="Could not find mouth in image, make sure your mouth is fully visible.",
                 details={"landmarks_count": len(lmk)}
             )
 
@@ -318,7 +318,7 @@ class LogicController:
                 requirement=Requirement.MOUTH_CLOSED,
                 passed=False,
                 severity=Severity.ERROR,
-                message=f"Mouth is open (gap ratio {ratio:.3f} > {max_gap_ratio}).",
+                message=f"Open mouth detected.",
                 details={
                     "gap": gap,
                     "width_outer": width_outer,
@@ -347,7 +347,7 @@ class LogicController:
                 passed=no_hat_pass,
                 severity=Severity.ERROR if not no_hat_pass else Severity.INFO,
                 message=("No hat detected." if no_hat_pass
-                         else f"Hat detected (conf {hat_conf:.2f} ≥ {threshold})."),
+                         else f"Hat detected."),
                 details={"hat_confidence": hat_conf, "threshold": threshold}
             ),
             CheckResult(
@@ -355,7 +355,7 @@ class LogicController:
                 passed=no_glasses_pass,
                 severity=Severity.ERROR if not no_glasses_pass else Severity.INFO,
                 message=("No glasses detected." if no_glasses_pass
-                         else f"Glasses detected (conf {glasses_conf:.2f} ≥ {threshold})."),
+                         else f"Glasses detected."),
                 details={"glasses_confidence": glasses_conf, "threshold": threshold}
             )
         ]
@@ -380,7 +380,7 @@ class LogicController:
                 passed=no_hat_pass,
                 severity=Severity.ERROR if not no_hat_pass else Severity.INFO,
                 message=("No hat detected." if no_hat_pass
-                         else f"Hat detected (conf {hat_conf:.2f} ≥ {threshold})."),
+                         else f"Hat detected."),
                 details={"hat_confidence": hat_conf, "threshold": threshold}
             ),
             CheckResult(
@@ -388,7 +388,7 @@ class LogicController:
                 passed=no_glasses_pass,
                 severity=Severity.ERROR if not no_glasses_pass else Severity.INFO,
                 message=("No glasses detected." if no_glasses_pass
-                         else f"Glasses detected (conf {glasses_conf:.2f} ≥ {threshold})."),
+                         else f"Glasses detected."),
                 details={"glasses_confidence": glasses_conf, "threshold": threshold}
             ),
         ]

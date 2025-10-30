@@ -92,15 +92,6 @@ def analyze_image():
         decision = "APPROVED" if overall_pass else "REJECTED"
         resp["decision"] = decision
 
-        # THIS IS OPTIONAL but its a summary, we can remove this if you want :)
-        resp["summary"] = {
-            "face": next(c for c in resp["checks"] if "FACE_PRESENT" in str(c["requirement"]))["passed"],
-            "single_face": next(c for c in resp["checks"] if "SINGLE_FACE" in str(c["requirement"]))["passed"],
-            "mouth_closed": next(c for c in resp["checks"] if "MOUTH_CLOSED" in str(c["requirement"]))["passed"],
-            "no_hat": next(c for c in resp["checks"] if "NO_HAT" in str(c["requirement"]))["passed"],
-            "no_glasses": next(c for c in resp["checks"] if "NO_GLASSES" in str(c["requirement"]))["passed"],
-        }
-
         # Fail if not overall pass is false :)
         status = 200 if overall_pass else 422
         return jsonify(resp), status
