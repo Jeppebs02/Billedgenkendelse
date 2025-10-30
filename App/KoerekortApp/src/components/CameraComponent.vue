@@ -92,12 +92,15 @@ async function addPhoto() {
   <div class="responsive-grid">
     <div class="card">
       <!-- image -->
-      <img
-        v-if="imageSrc"
-        :src="imageSrc"
-        alt="snapshot"
-        class="picture-style"
-      />
+      <div class="photo-frame" :class="{ 'has-image': !!imageSrc }">
+        <img v-if="imageSrc" :src="imageSrc" alt="Uploaded photo" class="photo-img" />
+        <div v-else class="photo-placeholder">
+          <ion-icon name="image-outline"></ion-icon>
+          <p>Upload a photo</p>
+          <small>Portrait, face centered, plain background</small>
+        </div>
+      </div>
+
 
       <!-- The “form” UI -->
       <form @submit.prevent="addPhoto" enctype="multipart/form-data" style="display:grid; gap: 8px;">

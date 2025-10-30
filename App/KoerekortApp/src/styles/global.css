@@ -71,18 +71,6 @@ ion-icon {
   gap: 18px;
 }
 
-/* Picture format and styling */
-.picture-style {
-  width: 100%;
-  height: auto;
-  max-width: 768px;
-  object-fit: contain;
-  border: 1px solid #ffffff;
-  border-radius: 8px;
-  display: block;
-  margin: 0 auto;
-}
-
 /* Titel styling */
 .title-style {
   text-align: center;
@@ -110,3 +98,45 @@ ion-icon {
   text-overflow: ellipsis;     /* optional with nowrap */
 }
 
+/* Outer frame keeps size steady (3:4 like an ID photo) */
+.photo-frame {
+  width: 100%;
+  max-width: 520px;      /* tweak for tablets if you like */
+  margin: 16px auto;
+  aspect-ratio: 3 / 4;   /* consistent portrait box */
+  border-radius: 12px;
+  border: 2px dashed #cbd5e1;
+  background: #f2f4f7;
+  display: grid;
+  place-items: center;   /* center placeholder content */
+  overflow: hidden;      /* round corners apply to image */
+}
+
+/* When an image is present you can switch to solid border (optional) */
+.photo-frame.has-image {
+  border-style: solid;
+  border-color: #ddd;
+  background: #000;      /* helps with letterboxing around contain */
+}
+
+/* Placeholder look */
+.photo-placeholder {
+  text-align: center;
+  color: #667085;
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+}
+
+.photo-placeholder ion-icon {
+  font-size: 44px;
+  opacity: 0.6;
+}
+
+/* Image fills the reserved frame without distortion */
+.photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;   /* see full photo inside the frame */
+  display: block;
+}
