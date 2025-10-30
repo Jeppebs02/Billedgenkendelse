@@ -89,13 +89,22 @@ async function addPhoto() {
 </script>
 
 <template>
-  <div style="display:grid; gap:12px; max-width: 420px;">
+  <div style="display:grid; gap:16px; max-width: 420px;">
 
     <img
       v-if="imageSrc"
       :src="imageSrc"
       alt="snapshot"
-      style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px;"
+      style="
+      width: 100%;
+      height: auto;
+      max-width: 420px;
+      object-fit: contain;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      display: block;
+      margin: 0 auto;"
+
     />
 
     <!-- The “form” UI -->
