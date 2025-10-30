@@ -89,42 +89,37 @@ async function addPhoto() {
 </script>
 
 <template>
-  <div style="display:grid; gap:16px; max-width: 420px;">
+  <div class="responsive-grid">
+    <div class="card">
+      <img
+        v-if="imageSrc"
+        :src="imageSrc"
+        alt="snapshot"
+        class="picture-style"
+      />
 
-    <img
-      v-if="imageSrc"
-      :src="imageSrc"
-      alt="snapshot"
-      style="
-      width: 100%;
-      height: auto;
-      max-width: 420px;
-      object-fit: contain;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      display: block;
-      margin: 0 auto;"
+      <!-- The “form” UI -->
+      <form @submit.prevent="addPhoto" enctype="multipart/form-data" style="display:grid; gap: 8px;">
+        <!-- Upload Picture button -->
+        <ion-button class="cool-btn" @click="takePicture">Upload photo</ion-button>
 
-    />
-
-    <!-- The “form” UI -->
-    <form @submit.prevent="addPhoto" enctype="multipart/form-data" style="display:grid; gap: 8px;">
-      <ion-button class="cool-btn" @click="takePicture">Upload photo</ion-button>
-      <ion-button class="cool-btn" type="submit" :disabled="loading">
-        <!-- if loading is true, show Analyzing, if false show Analyze photo -->
-        {{ loading ? 'Analyzing...' : 'Analyze photo' }}
-      </ion-button>
-    </form>
+        <!-- Analyse button -->
+        <ion-button class="cool-btn" type="submit" :disabled="loading">
+          <!-- if loading is true, show Analyzing, if false show Analyze photo -->
+          {{ loading ? 'Analyzing...' : 'Analyze photo' }}
+        </ion-button>
+      </form>
 
 
 
-    <!-- Server Feedback -->
-    <p v-if="httpMsg" style="color:#b00020;">{{ httpMsg }}</p>
+      <!-- Server Feedback -->
+      <p v-if="httpMsg" style="color:#b00020;">{{ httpMsg }}</p>
 
-    <details v-if="serverResponse">
-      <summary>Server response</summary>
-      <pre style="white-space: pre-wrap;">{{ JSON.stringify(serverResponse, null, 2) }}</pre>
-    </details>
+      <details v-if="serverResponse">
+        <summary>Server response</summary>
+        <pre style="white-space: pre-wrap;">{{ JSON.stringify(serverResponse, null, 2) }}</pre>
+      </details>
+    </div>
   </div>
 </template>
 

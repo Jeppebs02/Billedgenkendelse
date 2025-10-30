@@ -54,3 +54,31 @@ ion-icon {
   margin-right: 8px;
   vertical-align: middle;
 }
+
+/* Responsive grid container to ensure good scaling on phone and tablet */
+.responsive-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Each card stacks its inner content - made to ensure everything is in the same collum */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Picture format and styling */
+.picture-style {
+  width: 100%;
+  height: auto;
+  max-width: 768px;
+  object-fit: contain;
+  border: 1px solid #ffffff;
+  border-radius: 8px;
+  display: block;
+  margin: 0 auto;
+}

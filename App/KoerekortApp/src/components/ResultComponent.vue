@@ -1,10 +1,8 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { IonButton, useIonRouter } from '@ionic/vue'
 import { useDataStore } from '@/stores/dataStore.js'
 
-
-const httpMsg = ref('')
 const dataStore = useDataStore()
 const ionRouter = useIonRouter()
 const imageSrc = computed(()=>dataStore.imageSrc)
@@ -21,17 +19,18 @@ function reset(){
 </script>
 
 <template>
-  <div style="display: grid; gap: 12px; max-width: 420px">
-    <img
-      v-if="imageSrc"
-      :src="imageSrc"
-      alt="snapshot"
-      style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px"
-      >
-    <h3>JSON Result</h3>
-    <pre>{{ formattedJson }}</pre>
+  <div class="responsive-grid">
+    <div class="card">
+      <img
+        v-if="imageSrc"
+        :src="imageSrc"
+        alt="snapshot"
+        class="picture-style"
+        >
+      <h3>JSON Result</h3>
+      <pre>{{ formattedJson }}</pre>
 
-    <ion-button class="cool-btn" @click="reset">Reset</ion-button>
-
+      <ion-button class="cool-btn" @click="reset">Reset</ion-button>
+    </div>
   </div>
 </template>
