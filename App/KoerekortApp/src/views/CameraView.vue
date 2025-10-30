@@ -6,7 +6,7 @@ import CameraComponent from '../components/CameraComponent.vue'
 <template>
   <ion-page>
     <ion-header>
-      <ion-toolbar>
+      <ion-toolbar color="dark">
         <ion-title>Camera</ion-title>
       </ion-toolbar>
     </ion-header>
