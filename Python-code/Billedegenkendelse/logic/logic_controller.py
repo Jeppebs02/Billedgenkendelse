@@ -1,8 +1,11 @@
+import cv2
+import numpy as np
 from .is_face_present.face_detector import DetectionVisualizer
 from .is_hat_glasses.hat_glasses_detector import HatGlassesDetector
 from .types import AnalysisReport, CheckResult, Requirement, Severity
 from mediapipe.tasks.python import vision
 from typing import Tuple, Union, Optional, List
+from .exposure.exposure_check import exposure_check
 import math
 
 
@@ -11,6 +14,7 @@ class LogicController:
     def __init__(self):
         self.face_detector = DetectionVisualizer()
         self.hat_glasses_detector = HatGlassesDetector()
+        self.exposure_check = exposure_check()
 
 
     # Utility functions
@@ -59,6 +63,10 @@ class LogicController:
         landmarks_present = self._are_landmarks_present(face_landmarker_result)
         checks.append(landmarks_present)
 
+        if landmarks_present.passed:
+            bgr = cv2.imread(image_path, cv2.IMREAD_COLOR)
+            checks.append(self.exposure_check.analyze(bgr, face_landmarker_result.face_landmarks[0]))
+
         # 4 Eyes open -
         eyes_visible = self._eyes_visible_check(face_landmarker_result)
         checks.append(eyes_visible)
@@ -98,7 +106,13 @@ class LogicController:
         checks.append(self._is_single_face(face_detector_result))
 
         # 3) Landmarks present
-        checks.append(self._are_landmarks_present(face_landmarker_result))
+        landmarks_present = self._are_landmarks_present(face_landmarker_result)
+        checks.append(landmarks_present)
+
+        if landmarks_present.passed:
+            arr = np.frombuffer(image_bytes, np.uint8)
+            bgr = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+            checks.append(self.exposure_check.analyze(bgr, face_landmarker_result.face_landmarks[0]))
 
         # 4) Eyes visible
         checks.append(self._eyes_visible_check(face_landmarker_result))
@@ -108,6 +122,8 @@ class LogicController:
 
         # 6) No hat and no glasses
         checks.extend(self._check_hats_and_glasses_bytes(image_bytes, threshold=threshold))
+
+
 
         overall_pass = all(c.passed for c in checks)
         return AnalysisReport(
