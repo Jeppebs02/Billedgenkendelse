@@ -1,5 +1,6 @@
 from .is_face_present.face_detector import DetectionVisualizer
 from .is_hat_glasses.hat_glasses_detector import HatGlassesDetector
+from .head_placement.head_centering_validator import HeadCenteringValidator
 from .types import AnalysisReport, CheckResult, Requirement, Severity
 from mediapipe.tasks.python import vision
 from typing import Tuple, Union, Optional, List
@@ -11,7 +12,7 @@ class LogicController:
     def __init__(self):
         self.face_detector = DetectionVisualizer()
         self.hat_glasses_detector = HatGlassesDetector()
-
+        self.head_centering_validator = HeadCenteringValidator()
 
     # Utility functions
 
@@ -71,6 +72,10 @@ class LogicController:
         hat_glasses_checks = self._check_hats_and_glasses(image_path)
         checks.extend(hat_glasses_checks)
 
+        # 7 Head centered
+        head_centered = self.head_centering.check_image(image_path)
+        checks.append(head_centered)
+
 
 
         overall_pass = all(c.passed for c in checks)
@@ -108,6 +113,9 @@ class LogicController:
 
         # 6) No hat and no glasses
         checks.extend(self._check_hats_and_glasses_bytes(image_bytes, threshold=threshold))
+
+        #7) Head centered
+        checks.append(self.head_centering_validator.check_bytes(image_bytes))
 
         overall_pass = all(c.passed for c in checks)
         return AnalysisReport(
