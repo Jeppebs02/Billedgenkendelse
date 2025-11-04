@@ -43,23 +43,18 @@ class LogicController:
 
 
     def run_analysis(self, image_path: str) -> AnalysisReport:
+        # New: pixelation check
+        pixelation_result = self.pixelation_detector.analyze_bytes(image_path)
+
         # run each method and alert the user somehow
         face_detector_result = self.face_detector.analyze_image(image_path)
         face_landmarker_result = self.face_detector.analyze_landmarks(image_path)
 
-        # New: pixelation check
-        pixelation_result = self.pixelation_detector.analyze_bytes(image_path)
+        checks = []
 
-        checks = [
-            CheckResult(
-                requirement=Requirement.IMAGE_CLEAR,
-                passed=pixelation_result["clear"],
-                severity=Severity.ERROR if not pixelation_result["clear"] else Severity.INFO,
-                message=("Image is clear." if pixelation_result["clear"]
-                         else "Image appears pixelated or blurry."),
-                details=pixelation_result
-            )
-        ]
+        # 1) Picture clear
+        picture_clear = self._is_picture_clear(pixelation_result)
+        checks.append(picture_clear)
 
         # 1) Face present
         face_present = self._is_face_in_image(face_detector_result)
@@ -106,33 +101,27 @@ class LogicController:
         # New: pixelation check
         pixelation_result = self.pixelation_detector.analyze_bytes(image_bytes)
 
-        checks = [
-            CheckResult(
-                requirement=Requirement.IMAGE_CLEAR,
-                passed=pixelation_result["clear"],
-                severity=Severity.ERROR if not pixelation_result["clear"] else Severity.INFO,
-                message=("Image is clear." if pixelation_result["clear"]
-                         else "Image appears pixelated or blurry."),
-                details=pixelation_result
-            )
-        ]
+        checks = []
 
-        # 1) Face present
+        # 1) Checks if picture quality is okay
+        checks.append(self._is_picture_clear(pixelation_detector_result))
+
+        # 2) Face present
         checks.append(self._is_face_in_image(face_detector_result))
 
-        # 2) Single face
+        # 3) Single face
         checks.append(self._is_single_face(face_detector_result))
 
-        # 3) Landmarks present
+        # 4) Landmarks present
         checks.append(self._are_landmarks_present(face_landmarker_result))
 
-        # 4) Eyes visible
+        # 5) Eyes visible
         checks.append(self._eyes_visible_check(face_landmarker_result))
 
-        # 5) Mouth closed
+        # 6) Mouth closed
         checks.append(self._mouth_closed_check(face_landmarker_result))
 
-        # 6) No hat and no glasses
+        # 7) No hat and no glasses
         checks.extend(self._check_hats_and_glasses_bytes(image_bytes, threshold=threshold))
 
         overall_pass = all(c.passed for c in checks)
@@ -418,3 +407,13 @@ class LogicController:
                 details={"glasses_confidence": glasses_conf, "threshold": threshold}
             ),
         ]
+
+    def _is_picture_clear(self, result: dict) -> CheckResult:
+        clear = result["clear"]
+        return CheckResult(
+            requirement=Requirement.IMAGE_CLEAR,
+            passed=clear,
+            severity=Severity.ERROR if not clear else Severity.INFO,
+            message="Image is clear." if clear else "Image appears pixelated or blurry.",
+            details=result
+        )
