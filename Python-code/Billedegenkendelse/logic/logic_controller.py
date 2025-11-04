@@ -3,6 +3,7 @@ from .is_hat_glasses.hat_glasses_detector import HatGlassesDetector
 from .types import AnalysisReport, CheckResult, Requirement, Severity
 from mediapipe.tasks.python import vision
 from typing import Tuple, Union, Optional, List
+from .is_image_clear.pixelation_detector import PixelationDetector
 import math
 
 
@@ -89,7 +90,19 @@ class LogicController:
         face_detector_result = self.face_detector.analyze_bytes(image_bytes)
         face_landmarker_result = self.face_detector.analyze_landmarks_bytes(image_bytes)
 
-        checks = []
+        # New: pixelation check
+        pixelation_result = self.pixelation_detector.analyze_bytes(image_bytes)
+
+        checks = [
+            CheckResult(
+                requirement=Requirement.IMAGE_CLEAR,
+                passed=pixelation_result["clear"],
+                severity=Severity.ERROR if not pixelation_result["clear"] else Severity.INFO,
+                message=("Image is clear." if pixelation_result["clear"]
+                         else "Image appears pixelated or blurry."),
+                details=pixelation_result
+            )
+        ]
 
         # 1) Face present
         checks.append(self._is_face_in_image(face_detector_result))

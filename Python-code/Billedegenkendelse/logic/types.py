@@ -11,6 +11,7 @@ class Severity(str, Enum):
 
 
 class Requirement(str, Enum):
+    IMAGE_CLEAR = "IMAGE_CLEAR"
     FACE_PRESENT = "FACE_PRESENT"
     SINGLE_FACE = "SINGLE_FACE"
     LANDMARKS_PRESENT = "LANDMARKS_PRESENT"
