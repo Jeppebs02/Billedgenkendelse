@@ -10,6 +10,7 @@ import math
 
 class LogicController:
     def __init__(self):
+        self.pixelation_detector = PixelationDetector()
         self.face_detector = DetectionVisualizer()
         self.hat_glasses_detector = HatGlassesDetector()
 
@@ -46,7 +47,19 @@ class LogicController:
         face_detector_result = self.face_detector.analyze_image(image_path)
         face_landmarker_result = self.face_detector.analyze_landmarks(image_path)
 
-        checks = []
+        # New: pixelation check
+        pixelation_result = self.pixelation_detector.analyze_bytes(image_path)
+
+        checks = [
+            CheckResult(
+                requirement=Requirement.IMAGE_CLEAR,
+                passed=pixelation_result["clear"],
+                severity=Severity.ERROR if not pixelation_result["clear"] else Severity.INFO,
+                message=("Image is clear." if pixelation_result["clear"]
+                         else "Image appears pixelated or blurry."),
+                details=pixelation_result
+            )
+        ]
 
         # 1) Face present
         face_present = self._is_face_in_image(face_detector_result)

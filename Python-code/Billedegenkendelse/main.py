@@ -29,6 +29,7 @@ if __name__ == '__main__':
     #IMAGE_FILE_NAME = "closedeyes.jpg"
     #IMAGE_FILE_NAME = "man_with_hat.jpg"
     IMAGE_FILE_NAME = "obama.jpg"
+    #IMAGE_FILE_NAME = "obama_mixed_bad_pixels.jpg"
 
     IMAGE_FILE = os.path.join("images", IMAGE_FILE_NAME)
 
