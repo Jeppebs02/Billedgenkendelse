@@ -3,6 +3,7 @@ from .is_hat_glasses.hat_glasses_detector import HatGlassesDetector
 from .types import AnalysisReport, CheckResult, Requirement, Severity
 from mediapipe.tasks.python import vision
 from typing import Tuple, Union, Optional, List
+from logic.glasses_logic.glasses_logic import GlassesLogic
 import math
 
 
@@ -11,6 +12,7 @@ class LogicController:
     def __init__(self):
         self.face_detector = DetectionVisualizer()
         self.hat_glasses_detector = HatGlassesDetector()
+        self.glasses_logic = GlassesLogic()
 
 
     # Utility functions
@@ -39,47 +41,10 @@ class LogicController:
         ear = (p2_p6 + p3_p5) / (2.0 * p1_p4)
         return ear
 
-
-    def run_analysis(self, image_path: str) -> AnalysisReport:
-        # run each method and alert the user somehow
-        face_detector_result = self.face_detector.analyze_image(image_path)
-        face_landmarker_result = self.face_detector.analyze_landmarks(image_path)
-
-        checks = []
-
-        # 1) Face present
-        face_present = self._is_face_in_image(face_detector_result)
-        checks.append(face_present)
-
-        # 2) Single face
-        single_face = self._is_single_face(face_detector_result)
-        checks.append(single_face)
-
-        # 3 Landmarks present
-        landmarks_present = self._are_landmarks_present(face_landmarker_result)
-        checks.append(landmarks_present)
-
-        # 4 Eyes open -
-        eyes_visible = self._eyes_visible_check(face_landmarker_result)
-        checks.append(eyes_visible)
-
-        # 5 Mouth closed
-        mouth_closed = self._mouth_closed_check(face_landmarker_result)
-        checks.append(mouth_closed)
-
-        # 6 No hat and no glasses
-        hat_glasses_checks = self._check_hats_and_glasses(image_path)
-        checks.extend(hat_glasses_checks)
-
-
-
-        overall_pass = all(c.passed for c in checks)
-
-        return AnalysisReport(
-            image=f"{image_path}",
-            passed=overall_pass,
-            checks=checks
-        )
+    def run_analysis(self, image_path: str, threshold: float = 0.5) -> AnalysisReport:
+        with open(image_path, "rb") as f:
+            image_bytes = f.read()
+        return self.run_analysis_bytes(image_bytes, threshold)
 
     def run_analysis_bytes(self, image_bytes: bytes, threshold: float = 0.5) -> AnalysisReport:
         """
@@ -89,7 +54,10 @@ class LogicController:
         face_detector_result = self.face_detector.analyze_bytes(image_bytes)
         face_landmarker_result = self.face_detector.analyze_landmarks_bytes(image_bytes)
 
+
+
         checks = []
+
 
         # 1) Face present
         checks.append(self._is_face_in_image(face_detector_result))
@@ -108,6 +76,14 @@ class LogicController:
 
         # 6) No hat and no glasses
         checks.extend(self._check_hats_and_glasses_bytes(image_bytes, threshold=threshold))
+
+        checks.extend(
+            self.glasses_logic.run_all(
+                image_bytes=image_bytes,
+                face_detector_result=face_detector_result,
+                face_landmarker_result=face_landmarker_result
+            )
+        )
 
         overall_pass = all(c.passed for c in checks)
         return AnalysisReport(

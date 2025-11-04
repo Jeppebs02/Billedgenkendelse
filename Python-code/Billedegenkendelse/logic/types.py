@@ -18,6 +18,8 @@ class Requirement(str, Enum):
     MOUTH_CLOSED = "MOUTH_CLOSED"
     NO_HAT = "NO_HAT"
     NO_GLASSES = "NO_GLASSES"
+    NO_SUNGLASSES = "NO_SUNGLASSES"
+    NO_GLASSES_REFLECTION = "NO_GLASSES_REFLECTION"
     # Vi kan tilføjere flere krav senere som fx CENTERED, EYES_VISIBLE, MOUTH_CLOSED, BG_WHITE,
 
 

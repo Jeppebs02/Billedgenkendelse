@@ -1,7 +1,7 @@
 import cv2
 import os
 import numpy as np
-
+from pathlib import Path
 
 import mediapipe as mp
 from mediapipe.tasks import python
@@ -24,38 +24,21 @@ if __name__ == '__main__':
 
     # Configuration
 
-    IMAGE_FILE_NAME = "1708197244569.jpg"
+
 
     #IMAGE_FILE_NAME = "closedeyes.jpg"
     #IMAGE_FILE_NAME = "man_with_hat.jpg"
     #IMAGE_FILE_NAME = "open_mouth.jpg"
+    BASE_DIR = Path(__file__).resolve().parent  # folder of main.py
 
-    IMAGE_FILE = os.path.join("images", IMAGE_FILE_NAME)
+    IMAGE_FILE_NAME = "person_sunglasses.jpg"
+    IMAGE_FILE = BASE_DIR / "images" / IMAGE_FILE_NAME
+    FACE_DETECTOR_MODEL_FILE = BASE_DIR / "models" / "blaze_face_short_range.tflite"
+    FACE_LANDMARK_MODEL_FILE = BASE_DIR / "models" / "face_landmarker.task"
 
-    FACE_DETECTOR_MODEL_FILE = os.path.join("models", "blaze_face_short_range.tflite")
-
-    FACE_LANDMARK_MODEL_FILE = os.path.join("models", "face_landmarker.task")
-
-    DETECTOR_OUT_FILE = IMAGE_FILE_NAME + "_annotated.jpg"
-
-    LANDMARK_OUT_FILE = IMAGE_FILE_NAME + "_landmark_annotated.jpg"
-
-    if not os.path.isfile(IMAGE_FILE):
+    if not IMAGE_FILE.is_file():
         raise FileNotFoundError(f"Image not found: {IMAGE_FILE}")
 
-    if not os.path.isfile(FACE_DETECTOR_MODEL_FILE):
-        raise FileNotFoundError(
-            f"Model not found: {FACE_DETECTOR_MODEL_FILE}\n"
-            "Place a MediaPipe face detection .tflite model at this path."
-        )
-
-
     logic_controller = LogicController()
-
-    report = logic_controller.run_analysis(IMAGE_FILE_NAME)
-
+    report = logic_controller.run_analysis(str(IMAGE_FILE))  # pass full path
     report.print_console()
-
-
-
-
