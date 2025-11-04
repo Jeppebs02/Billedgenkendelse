@@ -44,7 +44,7 @@ class LogicController:
 
     def run_analysis(self, image_path: str) -> AnalysisReport:
         # New: pixelation check
-        pixelation_result = self.pixelation_detector.analyze_bytes(image_path)
+        pixelation_result = self.pixelation_detector.analyze_image(image_path)
 
         # run each method and alert the user somehow
         face_detector_result = self.face_detector.analyze_image(image_path)
@@ -99,7 +99,7 @@ class LogicController:
         face_landmarker_result = self.face_detector.analyze_landmarks_bytes(image_bytes)
 
         # New: pixelation check
-        pixelation_result = self.pixelation_detector.analyze_bytes(image_bytes)
+        pixelation_detector_result = self.pixelation_detector.analyze_bytes(image_bytes)
 
         checks = []
 
