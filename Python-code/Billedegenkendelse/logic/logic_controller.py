@@ -408,12 +408,4 @@ class LogicController:
             ),
         ]
 
-    def _is_picture_clear(self, result: dict) -> CheckResult:
-        clear = result["clear"]
-        return CheckResult(
-            requirement=Requirement.IMAGE_CLEAR,
-            passed=clear,
-            severity=Severity.ERROR if not clear else Severity.INFO,
-            message=("Image is clear." if clear else "Image appears pixelated or blurry."),
-            details=result
-        )
+

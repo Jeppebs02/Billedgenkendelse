@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
+from logic.types import *
 from pathlib import Path
+
 
 def bytes_to_rgb_np(image_bytes: bytes) -> np.ndarray:
     np_bytes = np.frombuffer(image_bytes, np.uint8)
@@ -47,3 +49,13 @@ class PixelationDetector:
             "variance": variance,
             "threshold": float(self.threshold),
         }
+
+    def _is_picture_clear(self, result: dict) -> CheckResult:
+        clear = result["clear"]
+        return CheckResult(
+            requirement=Requirement.IMAGE_CLEAR,
+            passed=clear,
+            severity=Severity.ERROR if not clear else Severity.INFO,
+            message=("Image is clear." if clear else "Image appears pixelated or blurry."),
+            details=result
+            )
