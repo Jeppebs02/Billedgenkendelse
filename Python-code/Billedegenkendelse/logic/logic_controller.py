@@ -1,5 +1,8 @@
+from .glasses_logic.glasses_logic import GlassesLogic
 from .is_face_present.face_detector import DetectionVisualizer
 from .is_hat_glasses.hat_glasses_detector import HatGlassesDetector
+from .exposure.exposure_check import exposure_check
+from .is_image_clear.pixelation_detector import PixelationDetector
 from .types import AnalysisReport, CheckResult, Requirement, Severity
 from mediapipe.tasks.python import vision
 from typing import Tuple, Union, Optional, List
@@ -11,6 +14,10 @@ class LogicController:
     def __init__(self):
         self.face_detector = DetectionVisualizer()
         self.hat_glasses_detector = HatGlassesDetector()
+        self.glasses_logic = GlassesLogic()
+        self.exposure_check = exposure_check()
+        self.pixelation_detector = PixelationDetector()
+
 
 
     # Utility functions
@@ -72,6 +79,20 @@ class LogicController:
 
         # 6) No hat and no glasses
         checks.extend(self._check_hats_and_glasses_bytes(image_bytes, threshold=threshold))
+
+        # 7) sunglasses / glare check
+        checks.extend(
+            self.glasses_logic.run_all(
+                image_bytes=image_bytes,
+                face_detector_result=face_detector_result,
+                face_landmarker_result=face_landmarker_result
+            )
+        )
+        # 8) image clear check
+        checks.append(self.pixelation_detector.analyze_bytes(image_bytes))
+
+        # 9) exposure / lighting check
+
 
         overall_pass = all(c.passed for c in checks)
         return AnalysisReport(
