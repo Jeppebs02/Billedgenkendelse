@@ -32,7 +32,7 @@ class exposure_check:
         self.min_mask_pixels = 800      # Minimum antal pixels i ansigtsmasken for gyldig analyse
 
 
-    def analyze(self, bgr: np.ndarray, landmarks) -> CheckResult:
+    def analyze(self, image_bytes: bytes, landmarks) -> CheckResult:
         """
         Hovedfunktion til lysanalyse.
 
@@ -43,6 +43,8 @@ class exposure_check:
         Output:
             CheckResult for Requirement.LIGHTING_OK
         """
+        arr = np.frombuffer(image_bytes, np.uint8)
+        bgr = cv2.imdecode(arr, cv2.IMREAD_COLOR)
 
         # Konverter til L-kanal (lysstyrke) fra LAB-farverum
         L = self._luminance_lab(bgr)

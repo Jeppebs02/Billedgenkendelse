@@ -92,6 +92,7 @@ class LogicController:
         checks.append(self.pixelation_detector.analyze_bytes(image_bytes))
 
         # 9) exposure / lighting check
+        checks.append(self.exposure_check.analyze(image_bytes, face_landmarker_result))
 
 
         overall_pass = all(c.passed for c in checks)
