@@ -414,6 +414,6 @@ class LogicController:
             requirement=Requirement.IMAGE_CLEAR,
             passed=clear,
             severity=Severity.ERROR if not clear else Severity.INFO,
-            message="Image is clear." if clear else "Image appears pixelated or blurry.",
+            message=("Image is clear." if clear else "Image appears pixelated or blurry."),
             details=result
         )
