@@ -16,6 +16,7 @@ class LogicController:
         self.hat_glasses_detector = HatGlassesDetector()
         self.glasses_logic = GlassesLogic()
         self.exposure_check = exposure_check()
+        # Here we can set a float which is the threshold for pixelation detection
         self.pixelation_detector = PixelationDetector()
 
 

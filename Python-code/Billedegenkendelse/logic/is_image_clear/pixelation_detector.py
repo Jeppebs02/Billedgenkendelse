@@ -16,7 +16,7 @@ class PixelationDetector:
     Uses variance of Laplacian — low variance = blurry/pixelated.
     """
 
-    def __init__(self, threshold: float = 100.0):
+    def __init__(self, threshold: float = 80.0):
         self.threshold = threshold
 
     def _variance_of_laplacian(self, image: np.ndarray) -> float:
