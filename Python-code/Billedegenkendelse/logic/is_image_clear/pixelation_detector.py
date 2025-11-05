@@ -23,11 +23,11 @@ class PixelationDetector:
 
     def analyze_bytes(self, image_bytes: bytes) -> dict:
         image = bytes_to_rgb_np(image_bytes)
-        variance = self._variance_of_laplacian(image)
+        variance = float(self._variance_of_laplacian(image))
         return {
-            "clear": variance >= self.threshold,
+            "clear": bool(variance >= float(self.threshold)),
             "variance": variance,
-            "threshold": self.threshold,
+            "threshold": float(self.threshold),
         }
 
     def analyze_image(self, image_path: str) -> dict:
@@ -41,9 +41,9 @@ class PixelationDetector:
             raise ValueError(f"Could not decode image: {path}")
 
         image = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-        variance = self._variance_of_laplacian(image)
+        variance = float(self._variance_of_laplacian(image))
         return {
-            "clear": variance >= self.threshold,
+            "clear": bool(variance >= float(self.threshold)),
             "variance": variance,
-            "threshold": self.threshold,
+            "threshold": float(self.threshold),
         }
