@@ -16,6 +16,7 @@ from logic.types import Requirement, Severity, CheckResult
 
 
 
+
 @dataclass
 class GlassesLogicConfig:
     # --- Sunglasses (tint) ---
