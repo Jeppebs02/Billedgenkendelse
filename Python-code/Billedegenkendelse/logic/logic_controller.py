@@ -40,46 +40,10 @@ class LogicController:
         return ear
 
 
-    def run_analysis(self, image_path: str) -> AnalysisReport:
-        # run each method and alert the user somehow
-        face_detector_result = self.face_detector.analyze_image(image_path)
-        face_landmarker_result = self.face_detector.analyze_landmarks(image_path)
-
-        checks = []
-
-        # 1) Face present
-        face_present = self._is_face_in_image(face_detector_result)
-        checks.append(face_present)
-
-        # 2) Single face
-        single_face = self._is_single_face(face_detector_result)
-        checks.append(single_face)
-
-        # 3 Landmarks present
-        landmarks_present = self._are_landmarks_present(face_landmarker_result)
-        checks.append(landmarks_present)
-
-        # 4 Eyes open -
-        eyes_visible = self._eyes_visible_check(face_landmarker_result)
-        checks.append(eyes_visible)
-
-        # 5 Mouth closed
-        mouth_closed = self._mouth_closed_check(face_landmarker_result)
-        checks.append(mouth_closed)
-
-        # 6 No hat and no glasses
-        hat_glasses_checks = self._check_hats_and_glasses(image_path)
-        checks.extend(hat_glasses_checks)
-
-
-
-        overall_pass = all(c.passed for c in checks)
-
-        return AnalysisReport(
-            image=f"{image_path}",
-            passed=overall_pass,
-            checks=checks
-        )
+    def run_analysis(self, image_path: str, threshold: float = 0.5) -> AnalysisReport:
+        with open(image_path, "rb") as f:
+            image_bytes = f.read()
+        return self.run_analysis_bytes(image_bytes, threshold)
 
     def run_analysis_bytes(self, image_bytes: bytes, threshold: float = 0.5) -> AnalysisReport:
         """
