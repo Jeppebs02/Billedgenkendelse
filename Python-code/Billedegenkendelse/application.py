@@ -98,6 +98,7 @@ def analyze_image():
 
     except Exception as e:
         # TODO: replace with proper logging
+        print(e)
         return jsonify({"error": str(e)}), 500
 
 

@@ -148,7 +148,7 @@ class GlassesLogic:
 
         # Sample skin patches near predefined face landmarks (if available)
         V_skin_vals: List[float] = []
-        if face_landmarker_result is not None and len(face_landmarker_result.face_landmarks) > 0:
+        if face_landmarker_result is not None and len(face_landmarker_result.face_landmarks[0]) > 0:
             V_skin_vals = self._sample_skin_brightness(img_bgr, face_landmarker_result)
 
         # Fallback: if no landmarks, use a ring around the ROI as pseudo-skin
@@ -251,7 +251,7 @@ class GlassesLogic:
 
         # Iris overlap (if we have iris landmarks)
         overlaps_iris = False
-        if face_landmarker_result is not None and len(face_landmarker_result.face_landmarks) > 0:
+        if face_landmarker_result is not None and len(face_landmarker_result.face_landmarks[0]) > 0:
             ih, iw = img_bgr.shape[:2]
             iris_points_px = self._iris_points_pixels(face_landmarker_result, iw, ih)
             if iris_points_px:
@@ -348,7 +348,7 @@ class GlassesLogic:
             return self._pad_and_clip_roi(roi, iw, ih, self.cfg.expand_roi_pct)
 
         # 2) FaceMesh eyes hull
-        if face_landmarker_result is not None and len(face_landmarker_result.face_landmarks) > 0:
+        if face_landmarker_result is not None and len(face_landmarker_result.face_landmarks[0]) > 0:
             pts = []
             fl = face_landmarker_result.face_landmarks[0]
             for idx in (self.left_eye_idx + self.right_eye_idx):
