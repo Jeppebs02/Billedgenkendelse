@@ -19,26 +19,25 @@ class exposure_check:
 
     def __init__(self):
         # Tærskelværdier (kan justeres, afhængigt af dataset og ønsket følsomhed)
-        self.thr_clip_hi = 0.06         # Hvor mange pixels må være helt hvide (maks lys)
-        self.thr_clip_lo = 0.12         # Hvor mange pixels må være helt sorte (maks mørke)
-        self.thr_dark_p05 = 8           # 5-percentilen skal mindst være over 8 (ellers for mørkt)
-        self.thr_bright_p95 = 252       # 95-percentilen skal være under 252 (ellers for lyst)
-        self.thr_dynamic_range = 28     # Minimum forskel mellem mørke og lyse områder
-        self.thr_std = 16               # Minimum standardafvigelse i lysfordeling (for kontrast)
-        self.thr_side_diff_pct = 0.22   # Maks forskel i lysstyrke mellem venstre/højre side (22 %)
-        self.thr_side_ratio = 1.45      # Maks ratio mellem lys på de to sider (1.45 ≈ 45 % forskel)
-        self.thr_p50_dark = 60          # Median under 60 → generelt for mørkt
-        self.thr_p50_bright = 190       # Median over 190 → generelt for lyst
-        self.min_mask_pixels = 800      # Minimum antal pixels i ansigtsmasken for gyldig analyse
+        self.thr_clip_hi = 0.06  # Hvor mange pixels må være helt hvide (maks lys)
+        self.thr_clip_lo = 0.12  # Hvor mange pixels må være helt sorte (maks mørke)
+        self.thr_dark_p05 = 8  # 5-percentilen skal mindst være over 8 (ellers for mørkt)
+        self.thr_bright_p95 = 252  # 95-percentilen skal være under 252 (ellers for lyst)
+        self.thr_dynamic_range = 28  # Minimum forskel mellem mørke og lyse områder
+        self.thr_std = 16  # Minimum standardafvigelse i lysfordeling (for kontrast)
+        self.thr_side_diff_pct = 0.22  # Maks forskel i lysstyrke mellem venstre/højre side (22 %)
+        self.thr_side_ratio = 1.45  # Maks ratio mellem lys på de to sider (1.45 ≈ 45 % forskel)
+        self.thr_p50_dark = 60  # Median under 60 → generelt for mørkt
+        self.thr_p50_bright = 190  # Median over 190 → generelt for lyst
+        self.min_mask_pixels = 800  # Minimum antal pixels i ansigtsmasken for gyldig analyse
 
-
-    def analyze(self, image_bytes: bytes, landmarks) -> CheckResult:
+    def analyze(self, image_bytes: bytes, landmarker_result) -> CheckResult:
         """
         Hovedfunktion til lysanalyse.
 
         Input:
-            bgr: np.ndarray — OpenCV-billede i BGR-format
-            landmarks: liste af MediaPipe-landmarks for ét ansigt
+            image_bytes: bytes — image file bytes
+            landmarker_result: FaceLandmarkerResult object for a single face
 
         Output:
             CheckResult for Requirement.LIGHTING_OK
@@ -50,7 +49,7 @@ class exposure_check:
         L = self._luminance_lab(bgr)
 
         # Opret en binær maske ud fra ansigtets landmarks
-        face_mask = self._landmarks_to_mask(bgr.shape, landmarks)
+        face_mask = self._landmarks_to_mask(bgr.shape, landmarker_result)
 
         # Rens masken (fjerner støj og hår/baggrund)
         face_mask = self._refine_face_mask(face_mask)
@@ -94,16 +93,14 @@ class exposure_check:
                 UB_adapt = min(230.0, L_skin_p50 + delta)
                 use_adaptive = True
 
-
-
         # Beregn histogram-metrikker for ansigtets lysfordeling
-        p05 = float(np.percentile(L_face, 5))   # Mørkeste områder
+        p05 = float(np.percentile(L_face, 5))  # Mørkeste områder
         p50 = float(np.percentile(L_face, 50))  # Median-lysniveau
         p95 = float(np.percentile(L_face, 95))  # Lyseste områder
-        stdL = float(np.std(L_face))            # Kontrast / variation
+        stdL = float(np.std(L_face))  # Kontrast / variation
         clip_hi_ratio = float(np.count_nonzero(L_face >= 252)) / L_face.size
         clip_lo_ratio = float(np.count_nonzero(L_face <= 3)) / L_face.size
-        dynamic_range = float(p95 - p05)        # Lys-spænd (kontrastområde)
+        dynamic_range = float(p95 - p05)  # Lys-spænd (kontrastområde)
 
         # Del ansigtet op i venstre og højre halvdel for at vurdere ensartet belysning
         ys, xs = np.where(face_mask == 1)
@@ -204,13 +201,19 @@ class exposure_check:
         lab = cv2.cvtColor(bgr, cv2.COLOR_BGR2LAB)
         return lab[:, :, 0]
 
-    def _landmarks_to_mask(self, img_shape, landmarks) -> np.ndarray:
+    def _landmarks_to_mask(self, img_shape, landmarker_result) -> np.ndarray:
         """
         Opretter en binær ansigtsmaske (0/1) ud fra ansigtslandmarks.
         Bruges til kun at analysere lys inden for ansigtets kontur.
         """
         h, w = img_shape[:2]
-        if not landmarks or len(landmarks) < 3:
+        if not landmarker_result or not landmarker_result.face_landmarks:
+            return np.zeros((h, w), np.uint8)
+
+        # Use landmarks from the first detected face
+        landmarks = landmarker_result.face_landmarks[0]
+
+        if len(landmarks) < 3:
             return np.zeros((h, w), np.uint8)
 
         # Konverter landmarks til pixelkoordinater
