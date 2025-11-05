@@ -4,8 +4,8 @@ from .is_face_present.face_detector import DetectionVisualizer
 from .is_hat_glasses.hat_glasses_detector import HatGlassesDetector
 from .types import AnalysisReport, CheckResult, Requirement, Severity
 from mediapipe.tasks.python import vision
-from typing import Tuple, Union, Optional, List
-from .exposure.exposure_check import exposure_check
+from typing import List
+from logic.exposure.exposure_check import exposure_check
 import math
 
 

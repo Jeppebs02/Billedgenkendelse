@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from ..types import CheckResult, Requirement, Severity
+from logic.types import CheckResult, Requirement, Severity
 
 
 class exposure_check:
