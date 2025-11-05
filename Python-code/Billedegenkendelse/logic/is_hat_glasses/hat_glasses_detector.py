@@ -2,6 +2,8 @@ from typing import Dict, Set
 from ultralytics import YOLO
 from PIL import Image
 import os
+
+from logic.types import CheckResult, Requirement, Severity
 from logic.utils.image_io import bytes_to_pil
 
 class HatGlassesDetector:
@@ -64,3 +66,71 @@ class HatGlassesDetector:
             if cls_name in confs and conf > confs[cls_name]:
                 confs[cls_name] = conf
         return confs
+
+
+
+    def check_hats_and_glasses(self, image_path: str, threshold: float = 0.5) -> list[CheckResult]:
+        """
+        Run the YOLO hat and glasses detection.
+        Returns two CheckResult objects: NO_HAT and NO_GLASSES. So to add it to the report, we need to use .extend()
+        """
+        yolo_confs = self.analyze_image(image_path)
+        hat_conf = yolo_confs.get("Hat", 0.0)
+        glasses_conf = yolo_confs.get("Glasses", 0.0)
+
+        no_hat_pass = hat_conf < threshold
+        no_glasses_pass = glasses_conf < threshold
+
+        results = [
+            CheckResult(
+                requirement=Requirement.NO_HAT,
+                passed=no_hat_pass,
+                severity=Severity.ERROR if not no_hat_pass else Severity.INFO,
+                message=("No hat detected." if no_hat_pass
+                         else f"Hat detected."),
+                details={"hat_confidence": hat_conf, "threshold": threshold}
+            ),
+            CheckResult(
+                requirement=Requirement.NO_GLASSES,
+                passed=no_glasses_pass,
+                severity=Severity.ERROR if not no_glasses_pass else Severity.INFO,
+                message=("No glasses detected." if no_glasses_pass
+                         else f"Glasses detected."),
+                details={"glasses_confidence": glasses_conf, "threshold": threshold}
+            )
+        ]
+
+        return results
+
+
+
+    def check_hats_and_glasses_bytes(self, image_bytes: bytes, threshold: float = 0.5) -> list[CheckResult]:
+        """
+        YOLO hat/glasses on in-memory bytes.
+        Returns two CheckResult objects: NO_HAT and NO_GLASSES. So to add it to the report, we need to use .extend()
+        """
+        yolo_confs = self.analyze_bytes(image_bytes)
+        hat_conf = yolo_confs.get("Hat", 0.0)
+        glasses_conf = yolo_confs.get("Glasses", 0.0)
+
+        no_hat_pass = hat_conf < threshold
+        no_glasses_pass = glasses_conf < threshold
+
+        return [
+            CheckResult(
+                requirement=Requirement.NO_HAT,
+                passed=no_hat_pass,
+                severity=Severity.ERROR if not no_hat_pass else Severity.INFO,
+                message=("No hat detected." if no_hat_pass
+                         else f"Hat detected."),
+                details={"hat_confidence": hat_conf, "threshold": threshold}
+            ),
+            CheckResult(
+                requirement=Requirement.NO_GLASSES,
+                passed=no_glasses_pass,
+                severity=Severity.ERROR if not no_glasses_pass else Severity.INFO,
+                message=("No glasses detected." if no_glasses_pass
+                         else f"Glasses detected."),
+                details={"glasses_confidence": glasses_conf, "threshold": threshold}
+            ),
+        ]

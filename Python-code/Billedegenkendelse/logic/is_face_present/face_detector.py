@@ -1,4 +1,4 @@
-from typing import Tuple, Union, Optional
+from typing import Tuple, Union, Optional, List
 import math
 import cv2
 import numpy as np
@@ -9,6 +9,8 @@ from mediapipe.tasks.python import vision
 from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
 import matplotlib.pyplot as plt
+
+from logic.types import CheckResult, Requirement, Severity
 from logic.utils.image_io import bytes_to_rgb_np
 
 
@@ -50,6 +52,30 @@ class DetectionVisualizer:
         os.makedirs(path, exist_ok=True)
 
 
+
+    def _dist(self, p, q) -> float:
+        '''Finds the distance between two points.'''
+        dx, dy = (p.x - q.x), (p.y - q.y)
+        return math.hypot(dx, dy)
+
+    def _mean(self, xs):
+        '''Returns the average of numbers in an interable'''
+        return sum(xs) / max(1, len(xs))
+
+    def _calculate_ear(self, eye_landmarks: List) -> float:
+        """
+        Calculates EAR for a single eye.
+        """
+        # Vertical distances
+        p2_p6 = self._dist(eye_landmarks[1], eye_landmarks[5])
+        p3_p5 = self._dist(eye_landmarks[2], eye_landmarks[4])
+
+        # Horizontal distance
+        p1_p4 = self._dist(eye_landmarks[0], eye_landmarks[3])
+
+        # EAR calculation
+        ear = (p2_p6 + p3_p5) / (2.0 * p1_p4)
+        return ear
 
 
     def _normalized_to_pixel_coordinates(
@@ -371,4 +397,220 @@ class DetectionVisualizer:
         print(f"Annotated landmark image written to {OUT_FILE}")
 
         return detection_result
+
+
+    # Check Results functions
+
+    def is_face_in_image(self, result: vision.FaceDetectorResult) -> CheckResult:
+        count_faces = len(result.detections)
+
+        if count_faces > 0:
+            return CheckResult(
+                requirement=Requirement.FACE_PRESENT,
+                passed=True,
+                severity=Severity.INFO,
+                message=f"Detected {count_faces} face(s).",
+                details={"count": count_faces}
+            )
+        else:
+            return CheckResult(
+                requirement=Requirement.FACE_PRESENT,
+                passed=False,
+                severity=Severity.ERROR,
+                message="No face detected.",
+                details={"count": 0}
+            )
+
+
+    def is_single_face(self, result: vision.FaceDetectorResult) -> CheckResult:
+        count = len(result.detections)
+        if count == 1:
+            return CheckResult(
+                requirement=Requirement.SINGLE_FACE,
+                passed=True,
+                severity=Severity.INFO,
+                message="One face detected.",
+                details={"count": 1}
+            )
+        return CheckResult(
+            requirement=Requirement.SINGLE_FACE,
+            passed=False,
+            severity=Severity.ERROR,
+            message=f"Expected exactly 1 face, found {count}.",
+            details={"count": count}
+        )
+
+
+    def are_landmarks_present(self, result: vision.FaceLandmarkerResult) -> CheckResult:
+
+        has_any_landmarks = bool(
+            result is not None and
+            getattr(result, "face_landmarks", None) and
+            len(result.face_landmarks) > 0 and
+            len(result.face_landmarks[0]) > 0
+        )
+
+        if has_any_landmarks:
+            count_of_faces = [len(face) for face in result.face_landmarks]
+            return CheckResult(
+                requirement=Requirement.LANDMARKS_PRESENT,
+                passed=True,
+                severity=Severity.INFO,
+                message=f"Detected landmarks for {len(result.face_landmarks)} face(s).",
+                details={"faces_with_landmarks": len(result.face_landmarks),
+                         "landmark_counts": count_of_faces}
+            )
+        else:
+            return CheckResult(
+                requirement=Requirement.LANDMARKS_PRESENT,
+                passed=False,
+                severity=Severity.ERROR,
+                message="Face not fully visible in image",
+                details={"faces_with_landmarks": 0}
+            )
+
+
+    def eyes_visible_check(self, result: vision.FaceLandmarkerResult, ear_threshold: float = 0.2) -> CheckResult:
+
+        if not result.face_landmarks or len(result.face_landmarks) == 0:
+            return CheckResult(
+                requirement=Requirement.EYES_VISIBLE,
+                passed=False,
+                severity=Severity.ERROR,
+                message="No landmarks detected – cannot check if eyes are visible.",
+                details={"landmarks_detected": False}
+            )
+
+        # Use first detected face
+        landmarks = result.face_landmarks[0]
+
+        # Indices for eye corners
+        # Check this link for details
+        # https://learnopencv.com/driver-drowsiness-detection-using-mediapipe-in-python/#Landmark-Detection-Using-Mediapipe-Face-Mesh-In-Python
+        LEFT_EYE_LANDMARKS = [362, 385, 387, 263, 373, 380]  # left eye outer & inner
+        RIGHT_EYE_LANDMARKS = [33, 160, 158, 133, 153, 144]  # right eye outer & inner
+
+
+        try:
+            left_eye = [landmarks[i] for i in LEFT_EYE_LANDMARKS]
+            right_eye = [landmarks[i] for i in RIGHT_EYE_LANDMARKS]
+        except IndexError:
+            return CheckResult(
+                requirement=Requirement.EYES_VISIBLE,
+                passed=False,
+                severity=Severity.ERROR,
+                message="Could not find expected eye landmarks.",
+                details={"landmarks_count": len(landmarks)}
+            )
+
+
+        left_ear = self._calculate_ear(left_eye)
+        right_ear = self._calculate_ear(right_eye)
+
+        # Average EAR for both eyes
+        avg_ear = (left_ear + right_ear) / 2.0
+
+        # The EAR is typically around 0.25-0.3 for open eyes and drops towards 0 for closed eyes.
+        eyes_visible = avg_ear > ear_threshold
+
+        if eyes_visible:
+            return CheckResult(
+                requirement=Requirement.EYES_VISIBLE,
+                passed=True,
+                severity=Severity.INFO,
+                message="Both eyes are visible.",
+                details={
+                    "left_eye_width": left_ear,
+                    "right_eye_width": right_ear
+                }
+            )
+        else:
+            return CheckResult(
+                requirement=Requirement.EYES_VISIBLE,
+                passed=False,
+                severity=Severity.ERROR,
+                message=f"Eyes closed or not visible.",
+                details={
+                    "left_eye_width": left_ear,
+                    "right_eye_width": right_ear
+                }
+            )
+
+
+    def mouth_closed_check(self, result: vision.FaceLandmarkerResult, max_gap_ratio: float = 0.03) -> CheckResult:
+        # Check
+        if not result.face_landmarks or len(result.face_landmarks) == 0:
+            return CheckResult(
+                requirement=Requirement.MOUTH_CLOSED,
+                passed=False,
+                severity=Severity.ERROR,
+                message="No landmarks detected, cannot check if mouth is closed.",
+                details={"landmarks_detected": False}
+            )
+
+        lmk = result.face_landmarks[0]
+
+        try:
+            # Inner-lip vertical gap
+            # see https://github.com/google-ai-edge/mediapipe/blob/a908d668c730da128dfa8d9f6bd25d519d006692/mediapipe/modules/face_geometry/data/canonical_face_model_uv_visualization.png
+            # for indices
+            upper_inner = lmk[13]
+            lower_inner = lmk[14]
+            gap = self._dist(upper_inner, lower_inner)
+
+            # Corner widths (outer + inner)
+            left_outer = lmk[61]
+            right_outer = lmk[291]
+
+            left_inner = lmk[78]
+            right_inner = lmk[308]
+            width_outer = self._dist(left_outer, right_outer)
+            width_inner = self._dist(left_inner, right_inner)
+            # return whichever is larger
+            width = max(width_outer, width_inner)
+
+        except IndexError:
+            return CheckResult(
+                requirement=Requirement.MOUTH_CLOSED,
+                passed=False,
+                severity=Severity.ERROR,
+                message="Could not find mouth in image, make sure your mouth is fully visible.",
+                details={"landmarks_count": len(lmk)}
+            )
+
+        eps = 1e-6
+        # eps is to avoid division by zero, it is a tiny number, so even if width is 0, ratio will be very large.
+        # 1e-6 = 0.000001
+        ratio = gap / (width + eps)
+        # Why do we divide by width? To normalize the gap size relative to face size.
+        final_result = ratio <= max_gap_ratio
+
+        if final_result:
+            return CheckResult(
+                requirement=Requirement.MOUTH_CLOSED,
+                passed=True,
+                severity=Severity.INFO,
+                message=f"Mouth closed (gap ratio {ratio:.3f} ≤ {max_gap_ratio}).",
+                details={
+                    "gap": gap,
+                    "width_outer": width_outer,
+                    "width_inner": width_inner,
+                    "norm_width": width,
+                    "gap_ratio": ratio
+                }
+            )
+        else:
+            return CheckResult(
+                requirement=Requirement.MOUTH_CLOSED,
+                passed=False,
+                severity=Severity.ERROR,
+                message=f"Open mouth detected.",
+                details={
+                    "gap": gap,
+                    "width_outer": width_outer,
+                    "width_inner": width_inner,
+                    "norm_width": width,
+                    "gap_ratio": ratio
+                }
+            )
 
