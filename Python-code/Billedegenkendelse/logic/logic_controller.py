@@ -6,6 +6,7 @@ from .is_image_clear.pixelation_detector import PixelationDetector
 from .types import AnalysisReport, CheckResult, Requirement, Severity
 from mediapipe.tasks.python import vision
 from typing import Tuple, Union, Optional, List
+from logic.Face_direction.Face_looking_at_camera import FaceLookingAtCamera
 import math
 
 
@@ -18,6 +19,7 @@ class LogicController:
         self.exposure_check = exposure_check()
         # Here we can set a float which is the threshold for pixelation detection
         self.pixelation_detector = PixelationDetector()
+        self.FaceLookingAtCamera = FaceLookingAtCamera()
 
 
 
@@ -94,6 +96,9 @@ class LogicController:
 
         # 9) exposure / lighting check
         checks.append(self.exposure_check.analyze(image_bytes, face_landmarker_result))
+
+        # 10) face looking straight
+        checks.append(self.Face_looking_at_camera.FaceLookingAtCamera(landmarks=face_landmarker_result))
 
 
         overall_pass = all(c.passed for c in checks)
