@@ -1,6 +1,9 @@
+from tkinter.tix import IMAGE
+
 import cv2
 import os
 import numpy as np
+
 
 
 import mediapipe as mp
@@ -25,14 +28,14 @@ if __name__ == '__main__':
     # Configuration
 
     #IMAGE_FILE_NAME = "1708197244569.jpg"
-
+    #IMAGE_FILE_NAME = "ikke_centreret.png"
+    #IMAGE_FILE_NAME = "centreret.png"
     IMAGE_FILE_NAME = "closedeyes.jpg"
+    #IMAGE_FILE_NAME = "to_close.png"
     #IMAGE_FILE_NAME = "man_with_hat.jpg"
     #IMAGE_FILE_NAME = "open_mouth.jpg"
 
     IMAGE_FILE = os.path.join("images", IMAGE_FILE_NAME)
-
-    #IMAGE_FILE = R"C:\Users\mitde\Documents\GitHub\Billedgenkendelse\Python-code\Billedegenkendelse\images\closedeyes.jpg"
 
     FACE_DETECTOR_MODEL_FILE = os.path.join("models", "blaze_face_short_range.tflite")
 
@@ -54,10 +57,22 @@ if __name__ == '__main__':
 
     logic_controller = LogicController()
 
-    report = logic_controller.run_analysis(IMAGE_FILE_NAME)
+    report = logic_controller.run_analysis(IMAGE_FILE)
 
     report.print_console()
 
+    vis = DetectionVisualizer()
+    det_res = vis.analyze_image(IMAGE_FILE_NAME)
 
+    bgr = cv2.imread(os.path.join("images", IMAGE_FILE_NAME))
+    rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
 
+    overlay = vis.annotate_center_and_size(
+        rgb, det_res,
+        tol_x=0.08, tol_y=0.10,
+        min_height_ratio=0.40,  # “for langt fra” hvis under
+        max_height_ratio=0.55  # “for tæt på” hvis over
+    )
+
+    cv2.imwrite(os.path.join("out", f"{IMAGE_FILE_NAME}_center_overlay.jpg"), cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
 
