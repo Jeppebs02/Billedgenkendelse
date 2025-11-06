@@ -1,0 +1,142 @@
+/* GLOBAL BUTTON STYLE — clean, minimal, reusable */
+.cool-btn {
+  /* White button with crisp black outline */
+  --background: #ffffff;
+  --background-hover: #f5f5f5;
+  --background-activated: #ededed;
+  --background-focused: #ededed;
+  --color: #111111;
+  --border-radius: 12px;
+  --border-width: 1.5px;
+  --border-style: solid;
+  --border-color: #000000;
+
+  /* Subtle shadow + tactile motion */
+  --box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+  --ripple-color: rgba(0, 0, 0, 0.15);
+
+  /* Typography + spacing */
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  --padding-top: 14px;
+  --padding-bottom: 14px;
+  --padding-start: 22px;
+  --padding-end: 22px;
+
+  transition: transform 0.15s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+/* Give Ionic’s inner button element the same polish */
+.cool-btn::part(native) {
+  border: 1.5px solid #000;
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+}
+
+/* Hover: gentle lift + subtle shadow */
+.cool-btn:hover {
+  transform: translateY(-2px);
+  --box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* Active: press down slightly */
+.cool-btn:active {
+  transform: translateY(0);
+  --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  --background: #f2f2f2;
+}
+
+/* Icon alignment */
+ion-icon {
+  font-size: 1.1em;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* Responsive grid container to ensure good scaling on phone and tablet */
+.responsive-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Each card stacks its inner content - made to ensure everything is in the same collum */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Titel styling */
+.title-style {
+  text-align: center;
+  width: 100%;
+}
+
+.toolbar-grid {
+  position: absolute;
+  inset: 0;                    /* full toolbar area */
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 70%) 1fr;  /* 3 fractions, middle capped at 70% */
+  align-items: center;
+  pointer-events: none;        /* let toolbar buttons remain clickable */
+}
+
+/* Title goes in the middle column and is centered */
+.toolbar-grid ion-title {
+  grid-column: 2;
+  justify-self: center;
+  width: 100%;
+  text-align: center;
+  pointer-events: auto;        /* title remains interactive if needed */
+  white-space: nowrap;         /* optional: prevent wrapping */
+  overflow: hidden;            /* optional with nowrap */
+  text-overflow: ellipsis;     /* optional with nowrap */
+}
+
+/* Outer frame keeps size steady (3:4 like an ID photo) */
+.photo-frame {
+  width: 100%;
+  max-width: 520px;      /* tweak for tablets if you like */
+  margin: 16px auto;
+  aspect-ratio: 3 / 4;   /* consistent portrait box */
+  border-radius: 12px;
+  border: 2px dashed #cbd5e1;
+  background: #f2f4f7;
+  display: grid;
+  place-items: center;   /* center placeholder content */
+  overflow: hidden;      /* round corners apply to image */
+}
+
+/* When an image is present you can switch to solid border (optional) */
+.photo-frame.has-image {
+  border-style: solid;
+  border-color: #ddd;
+  background: #000;      /* helps with letterboxing around contain */
+}
+
+/* Placeholder look */
+.photo-placeholder {
+  text-align: center;
+  color: #667085;
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+}
+
+.photo-placeholder ion-icon {
+  font-size: 44px;
+  opacity: 0.6;
+}
+
+/* Image fills the reserved frame without distortion */
+.photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;   /* see full photo inside the frame */
+  display: block;
+}

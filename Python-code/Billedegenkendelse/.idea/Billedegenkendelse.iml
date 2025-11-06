@@ -4,7 +4,17 @@
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="Python 3.11 (Billedgenkendelse)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+  <component name="PyNamespacePackagesService">
+    <option name="namespacePackageFolders">
+      <list>
+        <option value="$MODULE_DIR$/logic/is_image_clear" />
+        <option value="$MODULE_DIR$/logic/exposure" />
+        <option value="$MODULE_DIR$/logic/glasses_logic" />
+        <option value="$MODULE_DIR$/logic/head_placement" />
+      </list>
+    </option>
   </component>
 </module>
