@@ -2,15 +2,23 @@ version: '3.9'
 services:
   billed-api:
     build:
-      context: .                       # = Billedgenkendelse/Python-code
+      context: .                              # Billedgenkendelse/Python-code
       dockerfile: Billedegenkendelse/Dockerfile
     ports:
       - "5001:5001"
     environment:
-      # optional, but makes torch/ultralytics behave predictably on CPU
       - OMP_NUM_THREADS=1
       - UV_LOOP_DISABLED=1
-    # If you prefer mounting models instead of baking them in:
+      - ULTRALYTICS_SETTINGS_DIR=/app/.ultralytics
+    # If your model files are NOT in the repo/image, mount them from host:
     # volumes:
     #   - ./Billedegenkendelse/models:/app/Billedegenkendelse/models:ro
+    networks:
+      - npm
     restart: unless-stopped
+
+networks:
+  npm:
+    external: true
+    name: npm_default
+
