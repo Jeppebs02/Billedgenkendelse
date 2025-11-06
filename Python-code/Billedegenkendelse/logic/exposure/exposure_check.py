@@ -143,34 +143,34 @@ class exposure_check:
 
         # ---- Evaluering mod tærskelværdier ----
 
-        # Overeksponeret → mange meget lyse pixels + høj p95
+        # Overexposed → many very bright pixels + high p95
         if (p95 >= self.thr_bright_p95 and clip_hi_ratio >= self.thr_clip_hi):
-            return self._fail("Overeksponeret/udbrændt i ansigtet.", details)
+            return self._fail("Overexposed/burned out in the face.", details)
 
-        # Under-eksponeret → meget mørkt og lav p05
+        # Underexposed → very dark and low p05
         if (p05 <= self.thr_dark_p05 and clip_lo_ratio >= self.thr_clip_lo):
-            return self._fail("For mørkt i ansigtet.", details)
+            return self._fail("Too dark in the face.", details)
 
-        # Lav kontrast → både lille dynamik og lav standardafvigelse
+        # Low contrast → both low dynamic range and low standard deviation
         if dynamic_range < self.thr_dynamic_range and stdL < self.thr_std:
-            return self._fail("For lav kontrast/dynamik i ansigtet.", details)
+            return self._fail("Too low contrast/dynamic range in the face.", details)
 
-        # Ujævn belysning → stor forskel mellem venstre og højre side
+        # Uneven lighting → large difference between left and right sides
         if side_diff_pct >= self.thr_side_diff_pct or side_ratio >= self.thr_side_ratio:
-            return self._fail("Ujævn belysning mellem ansigtshalvdele.", details)
+            return self._fail("Uneven lighting between the two halves of the face.", details)
 
         # Adaptiv p50-vurdering baseret på hud, hvis tilgængelig; ellers faste grænser
         if dynamic_range < 35:
             if use_adaptive:
                 if p50 < LB_adapt:
-                    return self._fail("Generelt for lav ansigtsluminans ift. hudniveau (adaptiv).", details)
+                    return self._fail("Overall too low facial luminance compared to skin level (adaptive).", details)
                 if p50 > UB_adapt:
-                    return self._fail("Generelt for høj ansigtsluminans ift. hudniveau (adaptiv).", details)
+                    return self._fail("Overall too high facial luminance compared to skin level (adaptive).", details)
             else:
                 if p50 <= self.thr_p50_dark:
-                    return self._fail("Generelt for lav ansigtsluminans.", details)
+                    return self._fail("Overall too low facial luminance.", details)
                 if p50 >= self.thr_p50_bright:
-                    return self._fail("Generelt for høj ansigtsluminans.", details)
+                    return self._fail("Overall too high facial luminance.", details)
 
         # Hvis ingen problemer blev fundet
         return CheckResult(
