@@ -1,11 +1,16 @@
 version: '3.9'
 services:
-  webserver:
+  billed-api:
     build:
-      context: ..                              # repo root
-      dockerfile: Python-code/Billedegenkendelse/Dockerfile
-    container_name: python_api
+      context: .                       # = Billedgenkendelse/Python-code
+      dockerfile: Billedegenkendelse/Dockerfile
     ports:
       - "5001:5001"
     environment:
-      - FLASK_ENV=development
+      # optional, but makes torch/ultralytics behave predictably on CPU
+      - OMP_NUM_THREADS=1
+      - UV_LOOP_DISABLED=1
+    # If you prefer mounting models instead of baking them in:
+    # volumes:
+    #   - ./Billedegenkendelse/models:/app/Billedegenkendelse/models:ro
+    restart: unless-stopped
