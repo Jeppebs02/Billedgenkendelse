@@ -3,7 +3,7 @@ services:
   webserver:
     build:
       context: ..                              # repo root
-      dockerfile: Billedgenkendelse/Dockerfile
+      dockerfile: Python-code/Billedgenkendelse/Dockerfile
     container_name: python_api
     ports:
       - "5001:5001"
