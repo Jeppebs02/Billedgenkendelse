@@ -13,6 +13,7 @@
         <option value="$MODULE_DIR$/logic/is_image_clear" />
         <option value="$MODULE_DIR$/logic/exposure" />
         <option value="$MODULE_DIR$/logic/glasses_logic" />
+        <option value="$MODULE_DIR$/logic/head_placement" />
       </list>
     </option>
   </component>
