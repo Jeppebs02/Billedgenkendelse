@@ -73,7 +73,7 @@ class LogicController:
         checks.extend(hat_glasses_checks)
 
         # 7 Head centered
-        head_centered = self.head_centering.check_image(image_path)
+        head_centered = self.head_centering_validator.check_from_detection_file(face_detector_result, image_path)
         checks.append(head_centered)
 
 
@@ -115,7 +115,7 @@ class LogicController:
         checks.extend(self._check_hats_and_glasses_bytes(image_bytes, threshold=threshold))
 
         #7) Head centered
-        checks.append(self.head_centering_validator.check_bytes(image_bytes))
+        checks.append(self.head_centering_validator.check_from_detection_bytes(face_detector_result, image_bytes))
 
         overall_pass = all(c.passed for c in checks)
         return AnalysisReport(

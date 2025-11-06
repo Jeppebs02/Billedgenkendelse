@@ -9,10 +9,12 @@ from ..types import CheckResult, Requirement, Severity
 
 @dataclass
 class HeadCenteringConfig:
-    tol_x: float = 0.15
-    tol_y: float = 0.20
-    min_area_ratio: float = 0.04
-    max_area_ratio: float = 0.35
+    # Center-tolerancer (andel af billedstørrelse)
+    tol_x: float = 0.08
+    tol_y: float = 0.10
+    # Størrelseskrav baseret på BBOX-højde / billedhøjde (mere stabil end areal)
+    min_height_ratio: float = 0.40   # "for langt fra" hvis under dette (justér efter krav)
+    max_height_ratio: float = 0.55   # "for tæt på" hvis over dette (justér efter krav)
 
 class HeadCenteringValidator:
     def __init__(self, config: Optional[HeadCenteringConfig] = None):
@@ -38,16 +40,19 @@ class HeadCenteringValidator:
         bb = det.bounding_box
         x, y, bw, bh = bb.origin_x, bb.origin_y, bb.width, bb.height
 
+        # center-normalisering
         cx = x + bw / 2.0
         cy = y + bh / 2.0
         head_cx = cx / float(w)
         head_cy = cy / float(h)
         dx = head_cx - 0.5
         dy = head_cy - 0.5
-        area_ratio = (bw * bh) / float(w * h)
+
+        # Størrelseskrav via HØJDE-ratio (bh/h)
+        height_ratio = bh / float(h)
 
         within_center = (abs(dx) <= self.cfg.tol_x) and (abs(dy) <= self.cfg.tol_y)
-        within_size = (self.cfg.min_area_ratio <= area_ratio <= self.cfg.max_area_ratio)
+        within_size = (self.cfg.min_height_ratio <= height_ratio <= self.cfg.max_height_ratio)
         passed = within_center and within_size
 
         if not within_center and not within_size:
@@ -55,10 +60,15 @@ class HeadCenteringValidator:
         elif not within_center:
             msg = "Head not centered"
         elif not within_size:
-            msg = "Head size out of range"
+            # Skeln 'for tæt på' vs 'for langt fra' for klar feedback
+            if height_ratio > self.cfg.max_height_ratio:
+                msg = "Head too large (too close)"
+            else:
+                msg = "Head too small (too far)"
         else:
             msg = "OK"
-
+        #print(f"[DEBUG] dx={dx:.3f}, dy={dy:.3f}, area_ratio={area_ratio:.3f}, "
+         #     f"center_ok={within_center}, size_ok={within_size}")
         return CheckResult(
             requirement=Requirement.HEAD_CENTERED,
             passed=passed,
@@ -67,15 +77,16 @@ class HeadCenteringValidator:
             details={
                 "head_center_norm": (round(head_cx, 4), round(head_cy, 4)),
                 "delta_norm": (round(dx, 4), round(dy, 4)),
-                "area_ratio": round(area_ratio, 4),
+                "height_ratio": round(height_ratio, 4),  # ← NYTTIG TIL DEBUG
+                "height_limits": {
+                    "min_height_ratio": self.cfg.min_height_ratio,
+                    "max_height_ratio": self.cfg.max_height_ratio
+                },
                 "tolerances": {"tol_x": self.cfg.tol_x, "tol_y": self.cfg.tol_y},
-                "size_limits": {"min_area_ratio": self.cfg.min_area_ratio, "max_area_ratio": self.cfg.max_area_ratio},
                 "bbox_xywh": (x, y, bw, bh),
                 "image_wh": (w, h),
             }
         )
-
-    # --- Plug-and-play metoder der selv finder (w,h) ---
 
     def check_from_detection_file(self, det_res: vision.FaceDetectorResult, image_file_name: str) -> CheckResult:
         image_path = os.path.join("images", image_file_name)
