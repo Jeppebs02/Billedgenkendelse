@@ -1,4 +1,5 @@
 from .glasses_logic.glasses_logic import GlassesLogic
+from .head_placement.head_centering_validator import HeadCenteringValidator
 from .is_face_present.face_detector import DetectionVisualizer
 from .is_hat_glasses.hat_glasses_detector import HatGlassesDetector
 from .exposure.exposure_check import exposure_check
@@ -20,7 +21,7 @@ class LogicController:
         # Here we can set a float which is the threshold for pixelation detection
         self.pixelation_detector = PixelationDetector()
         self.face_looking_at_camera = FaceLookingAtCamera()
-
+        self.head_centering_validator = HeadCenteringValidator()
 
 
     # Utility functions
@@ -78,6 +79,8 @@ class LogicController:
         # 10) face looking straight
         checks.append(self.face_looking_at_camera.face_detector(result=face_landmarker_result))
 
+        # 11) face centered
+        checks.append(self.head_centering_validator.check_from_detection_bytes(det_res=face_detector_result, image_bytes=image_bytes))
 
         overall_pass = all(c.passed for c in checks)
         return AnalysisReport(

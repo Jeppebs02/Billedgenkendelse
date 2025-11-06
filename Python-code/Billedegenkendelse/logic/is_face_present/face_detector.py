@@ -614,3 +614,57 @@ class DetectionVisualizer:
                 }
             )
 
+
+    def annotate_center_and_size(self,
+                                       image_rgb: np.ndarray,
+                                       detection_result,
+                                       tol_x: float = 0.10,
+                                       tol_y: float = 0.12,
+                                       min_height_ratio: float = 0.40,
+                                       max_height_ratio: float = 0.55) -> np.ndarray:
+        """
+        Minimal version uden tekst — kun visual guides:
+          - Grøn toleranceboks for centreringskrav
+          - Blå ansigtsboks og rødt centerpunkt
+          - Gul/magenta guidebokse for min/max hovedstørrelse
+        """
+        annot = image_rgb.copy()
+        H, W = annot.shape[:2]
+
+        # --- 1) billedcenter + toleranceboks ---
+        cx_img, cy_img = int(W * 0.5), int(H * 0.5)
+        tol_w, tol_h = int(tol_x * W), int(tol_y * H)
+        cv2.drawMarker(annot, (cx_img, cy_img), (0, 255, 0),
+                       markerType=cv2.MARKER_CROSS, markerSize=40, thickness=2)
+        cv2.rectangle(annot, (cx_img - tol_w, cy_img - tol_h),
+                      (cx_img + tol_w, cy_img + tol_h), (0, 255, 0), 2)
+
+        # --- 2) primær detektion ---
+        if not getattr(detection_result, "detections", None):
+            return annot
+
+        det = max(detection_result.detections,
+                  key=lambda d: d.bounding_box.width * d.bounding_box.height)
+        bb = det.bounding_box
+        x, y, w, h = bb.origin_x, bb.origin_y, bb.width, bb.height
+
+        # --- 3) ansigtsboks + centerpunkt ---
+        cv2.rectangle(annot, (x, y), (x + w, y + h), (255, 0, 0), 2)
+        head_cx_px = int(x + w / 2.0)
+        head_cy_px = int(y + h / 2.0)
+        cv2.circle(annot, (head_cx_px, head_cy_px), 6, (0, 0, 255), -1)
+
+        # --- 4) tegn min/max hovedstørrelsesguider ---
+        aspect = w / float(h) if h > 0 else 1.0
+
+        def draw_size_guide(height_ratio_val: float, color):
+            gh = int(height_ratio_val * H)
+            gw = int(aspect * gh)
+            gx = int(head_cx_px - gw / 2)
+            gy = int(head_cy_px - gh / 2)
+            cv2.rectangle(annot, (gx, gy), (gx + gw, gy + gh), color, 2)
+
+        draw_size_guide(max_height_ratio, (255, 0, 255))  # magenta = max
+        draw_size_guide(min_height_ratio, (0, 255, 255))  # gul = min
+
+        return annot

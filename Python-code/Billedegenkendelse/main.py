@@ -24,13 +24,15 @@ if __name__ == '__main__':
 
     # Configuration
 
-    IMAGE_FILE_NAME = "1708197244569.jpg"
+    #IMAGE_FILE_NAME = "1708197244569.jpg"
 
-    #IMAGE_FILE_NAME = "closedeyes.jpg"
+    IMAGE_FILE_NAME = "closedeyes.jpg"
     #IMAGE_FILE_NAME = "man_with_hat.jpg"
     #IMAGE_FILE_NAME = "open_mouth.jpg"
 
     IMAGE_FILE = os.path.join("images", IMAGE_FILE_NAME)
+
+    #IMAGE_FILE = R"C:\Users\mitde\Documents\GitHub\Billedgenkendelse\Python-code\Billedegenkendelse\images\closedeyes.jpg"
 
     FACE_DETECTOR_MODEL_FILE = os.path.join("models", "blaze_face_short_range.tflite")
 
