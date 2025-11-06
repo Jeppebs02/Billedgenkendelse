@@ -2,8 +2,8 @@ version: '3.9'
 services:
   webserver:
     build:
-      context: .                              # repo root
-      dockerfile: /Billedegenkendelse/Dockerfile
+      context: ..                              # repo root
+      dockerfile: Python-code/Billedegenkendelse/Dockerfile
     container_name: python_api
     ports:
       - "5001:5001"
