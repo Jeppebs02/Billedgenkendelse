@@ -72,7 +72,3 @@ class PixelationDetector:
             message=("Image is clear." if clear else "Image appears pixelated or blurry."),
             details=details
         )
-
-    # THIS METHOD IS NO LONGER NEEDED AND CAN BE REMOVED
-    # def _is_picture_clear(self, result: dict) -> CheckResult:
-    #     ...
