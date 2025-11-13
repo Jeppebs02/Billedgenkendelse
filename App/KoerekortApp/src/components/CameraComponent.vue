@@ -63,6 +63,9 @@ async function addPhoto() {
     // DO NOT set Content-Type manually. The browser sets it for FormData.
     const resp = await fetch('http://127.0.0.1:5001/analyze', {
       method: 'POST',
+      headers: {
+        'x-api-key': 'a541fe33-6c48-490c-b71a-eadab16594de'
+      },
       body: form,
     })
 

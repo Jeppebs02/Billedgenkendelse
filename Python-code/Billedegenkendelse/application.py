@@ -5,9 +5,12 @@ import numpy as np
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+from torchgen.gen_functionalization_type import wrap_propagate_mutations_and_return
+
 from logic.logic_controller import LogicController
 
 from flask import Flask, request, jsonify, flash, redirect, url_for
+from functools import wraps
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -17,6 +20,23 @@ logic = LogicController()
 
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+# hardcoded api key for simplicity
+
+API_KEY = r"a541fe33-6c48-490c-b71a-eadab16594de"
+
+# require api key decorator
+def require_api_key(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        key = request.headers.get('x-api-key')
+        if key == API_KEY:
+            print("API key valid")
+            return f(*args, **kwargs)
+        else:
+            print("API key invalid")
+            return jsonify({"error": "Unauthorized"}), 401
+    return decorated_function
 
 
 def allowed_file(filename):
@@ -45,6 +65,7 @@ def hello_world():
 
 
 @app.route("/analyze", methods=['POST'])
+@require_api_key
 def analyze_image():
     try:
         if 'file' not in request.files:
