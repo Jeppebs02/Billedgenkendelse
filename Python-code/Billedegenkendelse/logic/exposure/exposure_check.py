@@ -25,7 +25,7 @@ class exposure_check:
         self.thr_bright_p95 = 252  # 95-percentilen skal være under 252 (ellers for lyst)
         self.thr_dynamic_range = 28  # Minimum forskel mellem mørke og lyse områder
         self.thr_std = 16  # Minimum standardafvigelse i lysfordeling (for kontrast)
-        self.thr_side_diff_pct = 0.22  # Maks forskel i lysstyrke mellem venstre/højre side (22 %)
+        self.thr_side_diff_pct = 0.30  # Maks forskel i lysstyrke mellem venstre/højre side (22 %)
         self.thr_side_ratio = 1.45  # Maks ratio mellem lys på de to sider (1.45 ≈ 45 % forskel)
         self.thr_p50_dark = 60  # Median under 60 → generelt for mørkt
         self.thr_p50_bright = 190  # Median over 190 → generelt for lyst
