@@ -7,14 +7,6 @@ import math
 import logic.types
 from logic.types import CheckResult
 
-
-
-
-
-
-
-
-
 class FaceLookingAtCamera:
     def __init__(self, tolerance_yaw_degrees=7, tolerance_pitch_degrees=15):
         self.yaw_tolerance = tolerance_yaw_degrees
@@ -69,16 +61,6 @@ class FaceLookingAtCamera:
             "Pitch": round(pitch,4)
         }
 
-        # try:
-        #     yaw, pitch = yaw, pitch
-        # except Exception as e:
-        #     return CheckResult(
-        #         requirement=Requirement.FACE_LOOKING_AT_CAMERA,
-        #         passed=False,
-        #         severity=Severity.ERROR,
-        #         message=f"Failed to compute head rotation: {str(e)}",
-        #         details=details
-        #     )
 
         if abs(yaw) <= self.yaw_tolerance and abs(pitch) <= self.pitch_tolerance:
             return CheckResult(
