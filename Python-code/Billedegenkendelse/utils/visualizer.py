@@ -4,12 +4,14 @@ import cv2
 import numpy as np
 import os
 import mediapipe as mp
+from PIL.ImageChops import overlay
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
 import matplotlib.pyplot as plt
 
+from logic.head_placement.head_centering_validator import HeadCenteringConfig
 from logic.types import CheckResult, Requirement, Severity
 from utils import image_io
 from utils.image_io import bytes_to_rgb_np
@@ -158,6 +160,8 @@ class VisualizerHelper:
         plt.tight_layout()
         plt.show()
 
+        #Annotations
+
     def annotate_facedetector(self, image_bytes, detection_result):
 
         """Annotates, and plots face detection results."""
@@ -194,36 +198,54 @@ class VisualizerHelper:
 
         return True
 
-    def annotate_center_and_size(self,
-                                       image_rgb: np.ndarray,
-                                       detection_result,
-                                       tol_x: float = 0.08,
-                                       tol_y: float = 0.50,
-                                       min_height_ratio: float = 0.40,
-                                       max_height_ratio: float = 0.55) -> np.ndarray:
+    def annotate_center_and_size(self, image_bytes, detection_result, cfg: Optional[HeadCenteringConfig] = None) -> np.ndarray:
         """
-        Minimal version uden tekst — kun visual guides:
+        Visualiserer centrerings- og størrelseskrav:
           - Grøn toleranceboks for centreringskrav
           - Blå ansigtsboks og rødt centerpunkt
           - Gul/magenta guidebokse for min/max hovedstørrelse
         """
+        # Brug delt config – eller defaults hvis ingen er givet
+        cfg = cfg or HeadCenteringConfig()
+
+        tol_x = cfg.tol_x
+        tol_y = cfg.tol_y
+        min_height_ratio = cfg.min_height_ratio
+        max_height_ratio = cfg.max_height_ratio
+
+        OUT_FILE_NAME = self.create_out_name(self.IMAGE_FILE_NAME) + "_center_and_size" + self.create_out_ext(
+            self.IMAGE_FILE_NAME)
+        OUT_FILE = os.path.join(self.OUT_DIR, OUT_FILE_NAME)
+
+        # draw detection on image
+        image_rgb = image_io.bytes_to_rgb_np(image_bytes)
+
         annot = image_rgb.copy()
         H, W = annot.shape[:2]
 
         # --- 1) billedcenter + toleranceboks ---
         cx_img, cy_img = int(W * 0.5), int(H * 0.5)
         tol_w, tol_h = int(tol_x * W), int(tol_y * H)
-        cv2.drawMarker(annot, (cx_img, cy_img), (0, 255, 0),
-                       markerType=cv2.MARKER_CROSS, markerSize=40, thickness=2)
-        cv2.rectangle(annot, (cx_img - tol_w, cy_img - tol_h),
-                      (cx_img + tol_w, cy_img + tol_h), (0, 255, 0), 2)
+        cv2.drawMarker(
+            annot, (cx_img, cy_img), (0, 255, 0),
+            markerType=cv2.MARKER_CROSS, markerSize=40, thickness=2
+        )
+        cv2.rectangle(
+            annot,
+            (cx_img - tol_w, cy_img - tol_h),
+            (cx_img + tol_w, cy_img + tol_h),
+            (0, 255, 0),
+            2,
+        )
 
         # --- 2) primær detektion ---
         if not getattr(detection_result, "detections", None):
             return annot
 
-        det = max(detection_result.detections,
-                  key=lambda d: d.bounding_box.width * d.bounding_box.height)
+        det = max(
+            detection_result.detections,
+            key=lambda d: d.bounding_box.width * d.bounding_box.height
+        )
         bb = det.bounding_box
         x, y, w, h = bb.origin_x, bb.origin_y, bb.width, bb.height
 
@@ -245,5 +267,10 @@ class VisualizerHelper:
 
         draw_size_guide(max_height_ratio, (255, 0, 255))  # magenta = max
         draw_size_guide(min_height_ratio, (0, 255, 255))  # gul = min
+
+
+        # Save image
+        cv2.imwrite(OUT_FILE, cv2.cvtColor(annot, cv2.COLOR_RGB2BGR))
+        print(f"Annotated image written to {OUT_FILE}")
 
         return annot

@@ -92,7 +92,7 @@ class LogicController:
 
         self.visualizer_helper.annotate_facedetector(image_bytes, face_detector_result)
         self.visualizer_helper.annotate_landmarks(image_bytes, face_landmarker_result)
-
+        self.visualizer_helper.annotate_center_and_size(image_bytes, face_detector_result,self.head_centering_validator.cfg)
         overall_pass = all(c.passed for c in checks)
         return AnalysisReport(
             image="<bytes>",

@@ -63,18 +63,4 @@ if __name__ == '__main__':
 
     report.print_console()
 
-    vis = DetectionVisualizer()
-    det_res = vis.analyze_image(IMAGE_FILE_NAME)
-
-    bgr = cv2.imread(os.path.join("images", IMAGE_FILE_NAME))
-    rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-
-    overlay = vis.annotate_center_and_size(
-        rgb, det_res,
-        tol_x=0.08, tol_y=0.50,
-        min_height_ratio=0.40,  # “for langt fra” hvis under
-        max_height_ratio=0.55  # “for tæt på” hvis over
-    )
-
-    cv2.imwrite(os.path.join("out", f"{IMAGE_FILE_NAME}_center_overlay.jpg"), cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
 
