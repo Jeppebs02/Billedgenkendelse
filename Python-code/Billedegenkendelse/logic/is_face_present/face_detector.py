@@ -52,16 +52,16 @@ class DetectionVisualizer:
         os.makedirs(path, exist_ok=True)
 
 
-
+    #hjælper
     def _dist(self, p, q) -> float:
         '''Finds the distance between two points.'''
         dx, dy = (p.x - q.x), (p.y - q.y)
         return math.hypot(dx, dy)
-
+    #hjælper
     def _mean(self, xs):
         '''Returns the average of numbers in an interable'''
         return sum(xs) / max(1, len(xs))
-
+    #Øjne logik
     def _calculate_ear(self, eye_landmarks: List) -> float:
         """
         Calculates EAR for a single eye.
@@ -77,7 +77,7 @@ class DetectionVisualizer:
         ear = (p2_p6 + p3_p5) / (2.0 * p1_p4)
         return ear
 
-
+    #hjælper
     def _normalized_to_pixel_coordinates(
             self,
             normalized_x: float,
@@ -98,7 +98,7 @@ class DetectionVisualizer:
         x_px = min(math.floor(normalized_x * image_width), image_width - 1)
         y_px = min(math.floor(normalized_y * image_height), image_height - 1)
         return x_px, y_px
-
+    #visualize
     def visualize(self, image_rgb: np.ndarray, detection_result) -> np.ndarray:
         """
         Draws bounding boxes/keypoints/labels on an RGB image and returns RGB.
@@ -136,7 +136,7 @@ class DetectionVisualizer:
             )
 
         return annotated_image
-
+    #visualize
     def draw_landmarks_on_image(self, rgb_image, detection_result):
         face_landmarks_list = detection_result.face_landmarks
         annotated_image = np.copy(rgb_image)
@@ -614,12 +614,12 @@ class DetectionVisualizer:
                 }
             )
 
-
+    #visualize
     def annotate_center_and_size(self,
                                        image_rgb: np.ndarray,
                                        detection_result,
-                                       tol_x: float = 0.10,
-                                       tol_y: float = 0.12,
+                                       tol_x: float = 0.08,
+                                       tol_y: float = 0.50,
                                        min_height_ratio: float = 0.40,
                                        max_height_ratio: float = 0.55) -> np.ndarray:
         """

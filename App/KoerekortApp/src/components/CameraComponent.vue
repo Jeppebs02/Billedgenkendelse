@@ -25,7 +25,7 @@ async function takePicture() {
   serverResponse.value = null
 
   const photo = await Camera.getPhoto({
-    quality: 90,
+    quality: 100,
     allowEditing: false,
     resultType: CameraResultType.Uri, // returns webPath/URL
   })

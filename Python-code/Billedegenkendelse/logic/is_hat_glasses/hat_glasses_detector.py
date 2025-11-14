@@ -115,6 +115,7 @@ class HatGlassesDetector:
 
         no_hat_pass = hat_conf < threshold
         no_glasses_pass = glasses_conf < threshold
+        glasses_detected = glasses_conf >= threshold
 
         return [
             CheckResult(
@@ -125,12 +126,24 @@ class HatGlassesDetector:
                          else f"Hat detected."),
                 details={"hat_confidence": hat_conf, "threshold": threshold}
             ),
+            # CheckResult(
+            #     requirement=Requirement.NO_GLASSES,
+            #     passed=no_glasses_pass,
+            #     severity=Severity.ERROR if not no_glasses_pass else Severity.INFO,
+            #     message=("No glasses detected." if no_glasses_pass
+            #              else f"Glasses detected."),
+            #     details={"glasses_confidence": glasses_conf, "threshold": threshold}
+            # ),
+
             CheckResult(
                 requirement=Requirement.NO_GLASSES,
-                passed=no_glasses_pass,
-                severity=Severity.ERROR if not no_glasses_pass else Severity.INFO,
-                message=("No glasses detected." if no_glasses_pass
-                         else f"Glasses detected."),
-                details={"glasses_confidence": glasses_conf, "threshold": threshold}
+                passed=True,  # <- altid true, så briller aldrig dumper
+                severity=Severity.INFO,
+                message=("Glasses detected (allowed)." if glasses_detected else "No glasses detected."),
+                details={
+                    "glasses_confidence": glasses_conf,
+                    "threshold": threshold,
+                    "detected": glasses_detected
+                }
             ),
         ]
