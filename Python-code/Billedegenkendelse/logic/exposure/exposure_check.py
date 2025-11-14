@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from logic.types import CheckResult, Requirement, Severity
-from ..help_code.picture_modefication import picture_modefication
+from utils.picture_modefication import picture_modefication
 
 
 class exposure_check(picture_modefication):
