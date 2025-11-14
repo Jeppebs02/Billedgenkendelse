@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
     logic_controller = LogicController()
 
-    report = logic_controller.run_analysis(IMAGE_FILE)
+    report = logic_controller.run_analysis(IMAGE_FILE, IMAGE_FILE_NAME)
 
     report.print_console()
 

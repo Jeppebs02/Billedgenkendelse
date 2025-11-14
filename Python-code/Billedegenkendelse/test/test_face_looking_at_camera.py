@@ -280,7 +280,7 @@ def test_get_yaw_pitch_no_landmarks():
 
 ### TESTS for FaceLookingAtCamera.face_detector
 
-# Test: Ansigt ser lige frem (bør PASS)
+# test: Ansigt ser lige frem (bør PASS)
 def test_face_looking_at_camera_pass_straight(face_checker_default):
     result = create_straight_face_result()
     expected = CheckResult(
@@ -292,9 +292,9 @@ def test_face_looking_at_camera_pass_straight(face_checker_default):
     assert face_checker_default.face_detector(result) == expected
 
 
-# Test: Ansigt er tæt på grænsen (bør PASS)
+# test: Ansigt er tæt på grænsen (bør PASS)
 def test_face_looking_at_camera_pass_at_tolerance_limit(face_checker_default):
-    # Test med YAW = 10 grader (tolerance_degrees=10)
+    # test med YAW = 10 grader (tolerance_degrees=10)
     result = create_yawed_face_result(10.0)
     expected = CheckResult(
         requirement=Requirement.FACE_LOOKING_AT_CAMERA,
@@ -305,9 +305,9 @@ def test_face_looking_at_camera_pass_at_tolerance_limit(face_checker_default):
     assert face_checker_default.face_detector(result) == expected
 
 
-# Test: Ansigt er lige over grænsen (bør FAIL)
+# test: Ansigt er lige over grænsen (bør FAIL)
 def test_face_looking_at_camera_fail_just_over_tolerance(face_checker_default):
-    # Test med YAW = 10.1 grader (tolerance_degrees=10)
+    # test med YAW = 10.1 grader (tolerance_degrees=10)
     result = create_yawed_face_result(10.1)
     expected = CheckResult(
         requirement=Requirement.FACE_LOOKING_AT_CAMERA,
@@ -318,9 +318,9 @@ def test_face_looking_at_camera_fail_just_over_tolerance(face_checker_default):
     assert face_checker_default.face_detector(result) == expected
 
 
-# Test: Ansigt med stor rotation i PITCH (bør FAIL)
+# test: Ansigt med stor rotation i PITCH (bør FAIL)
 def test_face_looking_at_camera_fail_high_pitch(face_checker_default):
-    # Test med PITCH = 20 grader (tolerance_degrees=10)
+    # test med PITCH = 20 grader (tolerance_degrees=10)
     result = create_pitched_face_result(20.0)
     expected = CheckResult(
         requirement=Requirement.FACE_LOOKING_AT_CAMERA,
@@ -331,7 +331,7 @@ def test_face_looking_at_camera_fail_high_pitch(face_checker_default):
     assert face_checker_default.face_detector(result) == expected
 
 
-# Test: Ansigt med rotation i begge akser, men inden for grænsen (bør PASS)
+# test: Ansigt med rotation i begge akser, men inden for grænsen (bør PASS)
 def test_face_looking_at_camera_pass_both_axes(face_checker_default):
     landmarks = [None] * 468
     # Yaw: 7 grader (til højre)
@@ -351,9 +351,9 @@ def test_face_looking_at_camera_pass_both_axes(face_checker_default):
     assert face_checker_default.face_detector(result) == expected
 
 
-# Test: Test med strammere tolerance (5 grader)
+# test: test med strammere tolerance (5 grader)
 def test_face_looking_at_camera_fail_tight_tolerance(face_checker_tight):
-    # Test med YAW = 6 grader (tolerance_degrees=5)
+    # test med YAW = 6 grader (tolerance_degrees=5)
     result = create_yawed_face_result(6.0)
     expected = CheckResult(
         requirement=Requirement.FACE_LOOKING_AT_CAMERA,
@@ -364,7 +364,7 @@ def test_face_looking_at_camera_fail_tight_tolerance(face_checker_tight):
     assert face_checker_tight.face_detector(result) == expected
 
 
-# Test: Håndtering af manglende landmarks (ValueError)
+# test: Håndtering af manglende landmarks (ValueError)
 def test_face_looking_at_camera_no_landmarks_error(face_checker_default):
     result = MockFaceLandmarkerResult(landmarks=None)
     expected = CheckResult(

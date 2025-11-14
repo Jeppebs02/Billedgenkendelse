@@ -11,7 +11,7 @@ from ..types import CheckResult, Requirement, Severity
 class HeadCenteringConfig:
     # Center-tolerancer (andel af billedstørrelse)
     tol_x: float = 0.08
-    tol_y: float = 0.50
+    tol_y: float   = 0.50
     # Størrelseskrav baseret på BBOX-højde / billedhøjde (mere stabil end areal)
     min_height_ratio: float = 0.40   # "for langt fra" hvis under dette (justér efter krav)
     max_height_ratio: float = 0.55   # "for tæt på" hvis over dette (justér efter krav)

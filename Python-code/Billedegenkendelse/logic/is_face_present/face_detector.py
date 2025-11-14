@@ -11,7 +11,7 @@ from mediapipe.framework.formats import landmark_pb2
 import matplotlib.pyplot as plt
 
 from logic.types import CheckResult, Requirement, Severity
-from logic.utils.image_io import bytes_to_rgb_np
+from utils.image_io import bytes_to_rgb_np
 
 
 class DetectionVisualizer:
