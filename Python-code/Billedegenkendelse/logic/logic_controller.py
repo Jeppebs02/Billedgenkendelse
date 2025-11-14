@@ -26,8 +26,11 @@ class LogicController:
 
     # Utility functions
 
-
-
+    def find_check(self, checks, req: Requirement):
+        for c in checks:
+            if c.requirement == req:
+                return c
+        return None
 
     def run_analysis(self, image_path: str, threshold: float = 0.5) -> AnalysisReport:
         with open(image_path, "rb") as f:
@@ -62,8 +65,12 @@ class LogicController:
         # 6) No hat and no glasses
         checks.extend(self.hat_glasses_detector.check_hats_and_glasses_bytes(image_bytes, threshold=threshold))
 
-        det = checks[5].details.get("detected")
-        # 7) sunglasses / glare check
+        no_glasses_check = self.find_check(checks, Requirement.NO_GLASSES)
+
+        det = False
+        if no_glasses_check and no_glasses_check.details:
+            det = no_glasses_check.details.get("detected", False)
+
         if det:
             checks.extend(
                 self.glasses_logic.run_all(
