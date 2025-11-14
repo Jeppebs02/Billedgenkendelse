@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 
 from logic.types import CheckResult, Requirement, Severity
-from .help_code import picture_modefication  # or .image_utils if that's the filename
+from .help_code import picture_modefication
 
 
 def bytes_to_rgb_np(image_bytes: bytes) -> np.ndarray:
