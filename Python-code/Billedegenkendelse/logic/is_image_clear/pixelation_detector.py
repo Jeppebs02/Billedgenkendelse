@@ -24,8 +24,8 @@ class PixelationDetector(picture_modefication):
 
     def __init__(
         self,
-        face_threshold: float = 80.0,
-        background_threshold: float = 40.0,
+        face_threshold: float = 50.0,
+        background_threshold: float = 10.0,
         min_face_pixels: int = 800,
     ):
         # legacy "threshold" for backwards compatibility (whole image)
