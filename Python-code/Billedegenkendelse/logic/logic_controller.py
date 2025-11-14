@@ -62,14 +62,16 @@ class LogicController:
         # 6) No hat and no glasses
         checks.extend(self.hat_glasses_detector.check_hats_and_glasses_bytes(image_bytes, threshold=threshold))
 
+        det = checks[5].details.get("detected")
         # 7) sunglasses / glare check
-        checks.extend(
-            self.glasses_logic.run_all(
-                image_bytes=image_bytes,
-                face_detector_result=face_detector_result,
-                face_landmarker_result=face_landmarker_result
+        if det:
+            checks.extend(
+                self.glasses_logic.run_all(
+                    image_bytes=image_bytes,
+                    face_detector_result=face_detector_result,
+                    face_landmarker_result=face_landmarker_result
+                )
             )
-        )
         # 8) image clear check
         checks.append(self.pixelation_detector.analyze_bytes(image_bytes))
 
