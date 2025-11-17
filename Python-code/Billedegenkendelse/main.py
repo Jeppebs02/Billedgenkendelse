@@ -12,7 +12,7 @@ from mediapipe.tasks.python import vision
 from logic.logic_controller import LogicController
 
 
-# Syntaxen er from package.file import class/function
+# Syntaxen er from package.file import class/function.
 from logic.is_face_present.face_detector import DetectionVisualizer
 
 
