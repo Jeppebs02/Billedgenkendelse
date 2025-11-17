@@ -930,3 +930,5 @@ FodyWeavers.xsd
 # Additional files built by Visual Studio
 
 # End of https://www.toptal.com/developers/gitignore/api/csharp,visualstudio
+Python-code/Billedegenkendelse/.idea/Billedegenkendelse.iml
+Python-code/Billedegenkendelse/.idea/misc.xml
