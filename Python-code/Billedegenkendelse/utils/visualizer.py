@@ -11,6 +11,7 @@ from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
 import matplotlib.pyplot as plt
 
+from logic.exposure.exposure_check import exposure_check
 from logic.face_direction.face_looking_at_camera import FaceLookingAtCamera
 from logic.head_placement.head_centering_validator import HeadCenteringConfig
 from logic.types import CheckResult, Requirement, Severity
@@ -21,6 +22,7 @@ class VisualizerHelper:
     def __init__(self, IMAGE_FILE_NAME):
         self.IMAGE_FILE_NAME = IMAGE_FILE_NAME
         self.OUT_DIR = self.create_out_dir(IMAGE_FILE_NAME)
+        self.exposure_check = exposure_check()
 
         os.makedirs(self.OUT_DIR, exist_ok=True)
 
@@ -411,3 +413,146 @@ class VisualizerHelper:
 
         return annot
 
+    def visualize_exposure(
+            self,
+            image_bytes: bytes,
+            exposure_result: CheckResult,
+            checker_instance: 'exposure_check',
+            detection_result
+    ) -> np.ndarray:
+        """
+        Tegner analyse-resultaterne på billedet, markerer lyse/mørke områder,
+        og returnerer det visualiserede BGR-array.
+        """
+
+        # --- 0. Initialisering og forberedelse ---
+
+        # Hent de nødvendige private metoder og konstanter fra checker_instance
+        # Vi må antage/forvente, at disse konstanter er defineret (hvilket de ikke er
+        # i din exposure_check.py, men de må have været tiltænkt der):
+        # Da de ikke er i exposure_check.py, tvinger vi værdier for at det kan køre.
+        try:
+            DARK_VIS_THRESHOLD = checker_instance.DARK_VIS_THRESHOLD
+            LIGHT_VIS_THRESHOLD = checker_instance.LIGHT_VIS_THRESHOLD
+        except AttributeError:
+            # Hvis de ikke er defineret i checker_instance, brug standardværdier
+            # (Dette er NØDVENDIGT da de mangler i din exposure_check.py)
+            DARK_VIS_THRESHOLD = 30
+            LIGHT_VIS_THRESHOLD = 200
+
+        # Forbered billedet
+        arr = np.frombuffer(image_bytes, np.uint8)
+        bgr = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+
+        output_image = bgr.copy()
+        h, w = output_image.shape[:2]
+
+        # Hent resultater
+        details = exposure_result.details
+        result_passed = exposure_result.passed
+        result_message = exposure_result.message
+        result_severity = exposure_result.severity
+
+
+        if not details or details.get('mask_pixels', 0) < checker_instance.min_mask_pixels:
+            color = (0, 0, 255)
+            cv2.putText(output_image, f"FEJL: {result_message}", (10, 40),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
+
+
+            OUT_FILE_NAME = self.create_out_name(self.IMAGE_FILE_NAME) + "_visualize_exposure" + self.create_out_ext(
+                self.IMAGE_FILE_NAME)
+            OUT_FILE = os.path.join(self.OUT_DIR, OUT_FILE_NAME)
+            cv2.imwrite(OUT_FILE, output_image)
+            print(f"Annotated image written to {OUT_FILE}")
+
+            return output_image
+
+        # --- 1. Opret Ansigtsmaske & Luminans Map ---
+        # Kald de private hjælpermetoder via checker_instance
+        face_mask = checker_instance._landmarks_to_mask(bgr.shape, detection_result)
+        face_mask = checker_instance._refine_face_mask(face_mask)  # Husk refine
+        L = checker_instance._luminance_lab(bgr)  # Luminans (L-kanal i LAB)
+
+        # --- 2. Tærskelmasker for Problemområder ---
+
+        # Find mørke områder kun INDEN FOR ansigtsmasken
+        dark_mask = (L < DARK_VIS_THRESHOLD).astype(np.uint8)
+        dark_mask &= face_mask
+
+        # Find lyse områder kun INDEN FOR ansigtsmasken
+        light_mask = (L > LIGHT_VIS_THRESHOLD).astype(np.uint8)
+        light_mask &= face_mask
+
+        # --- 3. Anvend Overlays ---
+        overlay = np.zeros_like(output_image, dtype=np.uint8)
+
+        # Farve mørke områder (Blå)
+        overlay[dark_mask == 1] = [255, 100, 0]
+
+        # Farve lyse områder (Rød)
+        overlay[light_mask == 1] = [0, 100, 255]
+
+        # Blend overlejringen
+        output_image = cv2.addWeighted(output_image, 1, overlay, 0.2, 0)
+
+        # Marker P50 midterlinjen
+        x_mid = details.get('x_mid', w // 2)
+        cv2.line(output_image, (x_mid, h), (x_mid, 0), (255, 255, 0), 2)
+
+        # --- 4. Status Boks (Top) ---
+        color = (0, 255, 0) if result_passed else (0, 0, 255)
+        status_text = "PASSED" if result_passed else "FAILED"
+
+        cv2.rectangle(output_image, (0, 0), (w, 40), color, -1)
+        cv2.putText(output_image, f"LIGHTING CHECK: {status_text} | {result_severity.value.upper()}", (10, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+
+        # --- 5. Detaljerede målinger (Bund) ---
+        y_offset = h - 10
+        font_scale = 0.6
+        font = cv2.FONT_HERSHEY_SIMPLEX
+
+        # Fejlmeddelelse
+        cv2.putText(output_image, f"MESSAGE: {result_message}", (10, y_offset), font, font_scale, (255, 255, 255),
+                    2)
+        y_offset -= 25
+
+        # Metrikker
+        metrics = [
+            ("P50 (Median)", 'p50', 'thr_p50_dark', 'thr_p50_bright'),
+            ("STD (Kontrast)", 'stdL', 'thr_std', None),
+            ("Side-Diff %", 'side_diff_pct', None, 'thr_side_diff_pct'),
+            ("Clip High %", 'clip_hi_ratio', None, 'thr_clip_hi'),
+        ]
+
+        for label, key, thr_lo_key, thr_hi_key in metrics:
+            value = details.get(key, 0)
+            text_color = (255, 255, 255)
+            text = f"{label}: {value:.2f}" if key.endswith('_ratio') or key.endswith(
+                '_pct') else f"{label}: {value:.1f}"
+
+            # Brug tærskelværdier fra checker_instance
+            if not result_passed:
+                if thr_lo_key and value < getattr(checker_instance, thr_lo_key, 0):
+                    text_color = (0, 165, 255)  # Orange
+                if thr_hi_key and value > getattr(checker_instance, thr_hi_key, float('inf')):
+                    text_color = (0, 165, 255)  # Orange
+
+            cv2.putText(output_image, text, (w - 200, y_offset), font, font_scale, text_color, 1)
+            y_offset -= 20
+
+        # Tilføj farvelegende
+        cv2.putText(output_image, f"BLÅ: Undereksponeret/Skygge (< {DARK_VIS_THRESHOLD} L)", (10, h - 70), font, 0.5,
+                    (255, 200, 0), 1)
+        cv2.putText(output_image, f"RØD: Overeksponeret/Højlys (> {LIGHT_VIS_THRESHOLD} L)", (10, h - 50), font, 0.5,
+                    (0, 100, 255), 1)
+
+        # --- 6. Gem resultatet ---
+        OUT_FILE_NAME = self.create_out_name(self.IMAGE_FILE_NAME) + "_visualize_exposure" + self.create_out_ext(
+            self.IMAGE_FILE_NAME)
+        OUT_FILE = os.path.join(self.OUT_DIR, OUT_FILE_NAME)
+        cv2.imwrite(OUT_FILE, output_image)
+        print(f"Annotated image written to {OUT_FILE}")
+
+        return output_image
