@@ -1,7 +1,9 @@
 version: '3.9'
 services:
   billed-api:
-    image: jeppebs/billedegenkendelse:latest
+    build:
+      context: .                              # Billedgenkendelse/Python-code
+      dockerfile: Billedegenkendelse/Dockerfile
     ports:
       - "5001:5001"
     environment:
@@ -11,28 +13,9 @@ services:
     # If your model files are NOT in the repo/image, mount them from host:
     # volumes:
     #   - ./Billedegenkendelse/models:/app/Billedegenkendelse/models:ro
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
-    
     networks:
       - npm
     restart: unless-stopped
-    
-    
-
-  watchtower:
-    image: containrrr/watchtower:latest
-    container_name: watchtower-billedegenkendelse
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    command: >
-      --label-enable
-      --cleanup
-      --interval 300
-    # Optional networks (see below)
-    networks:
-      - npm
 
 networks:
   npm:
