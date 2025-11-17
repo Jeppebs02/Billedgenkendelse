@@ -51,7 +51,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile
+          file: ./Python-code/Billedegenkendelse/Dockerfile
           push: true
           tags: |
             ${{ env.IMAGE_NAME }}:latest
