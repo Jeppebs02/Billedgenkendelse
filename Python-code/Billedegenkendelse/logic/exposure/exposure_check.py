@@ -1,9 +1,10 @@
 import cv2
 import numpy as np
 from logic.types import CheckResult, Requirement, Severity
+from utils.picture_modefication import picture_modefication
 
 
-class exposure_check:
+class exposure_check(picture_modefication):
     """
     Vurderer eksponering og belysning i et ansigt ud fra et billede (BGR)
     og MediaPipe-landmarks for ansigtet.
@@ -25,7 +26,7 @@ class exposure_check:
         self.thr_bright_p95 = 252  # 95-percentilen skal være under 252 (ellers for lyst)
         self.thr_dynamic_range = 28  # Minimum forskel mellem mørke og lyse områder
         self.thr_std = 16  # Minimum standardafvigelse i lysfordeling (for kontrast)
-        self.thr_side_diff_pct = 0.22  # Maks forskel i lysstyrke mellem venstre/højre side (22 %)
+        self.thr_side_diff_pct = 0.30  # Maks forskel i lysstyrke mellem venstre/højre side (22 %)
         self.thr_side_ratio = 1.45  # Maks ratio mellem lys på de to sider (1.45 ≈ 45 % forskel)
         self.thr_p50_dark = 60  # Median under 60 → generelt for mørkt
         self.thr_p50_bright = 190  # Median over 190 → generelt for lyst
@@ -143,34 +144,34 @@ class exposure_check:
 
         # ---- Evaluering mod tærskelværdier ----
 
-        # Overeksponeret → mange meget lyse pixels + høj p95
+        # Overexposed → many very bright pixels + high p95
         if (p95 >= self.thr_bright_p95 and clip_hi_ratio >= self.thr_clip_hi):
-            return self._fail("Overeksponeret/udbrændt i ansigtet.", details)
+            return self._fail("Overexposed/burned out in the face.", details)
 
-        # Under-eksponeret → meget mørkt og lav p05
+        # Underexposed → very dark and low p05
         if (p05 <= self.thr_dark_p05 and clip_lo_ratio >= self.thr_clip_lo):
-            return self._fail("For mørkt i ansigtet.", details)
+            return self._fail("Too dark in the face.", details)
 
-        # Lav kontrast → både lille dynamik og lav standardafvigelse
+        # Low contrast → both low dynamic range and low standard deviation
         if dynamic_range < self.thr_dynamic_range and stdL < self.thr_std:
-            return self._fail("For lav kontrast/dynamik i ansigtet.", details)
+            return self._fail("Too low contrast/dynamic range in the face.", details)
 
-        # Ujævn belysning → stor forskel mellem venstre og højre side
+        # Uneven lighting → large difference between left and right sides
         if side_diff_pct >= self.thr_side_diff_pct or side_ratio >= self.thr_side_ratio:
-            return self._fail("Ujævn belysning mellem ansigtshalvdele.", details)
+            return self._fail("Uneven lighting between the two halves of the face.", details)
 
         # Adaptiv p50-vurdering baseret på hud, hvis tilgængelig; ellers faste grænser
         if dynamic_range < 35:
             if use_adaptive:
                 if p50 < LB_adapt:
-                    return self._fail("Generelt for lav ansigtsluminans ift. hudniveau (adaptiv).", details)
+                    return self._fail("Overall too low facial luminance compared to skin level (adaptive).", details)
                 if p50 > UB_adapt:
-                    return self._fail("Generelt for høj ansigtsluminans ift. hudniveau (adaptiv).", details)
+                    return self._fail("Overall too high facial luminance compared to skin level (adaptive).", details)
             else:
                 if p50 <= self.thr_p50_dark:
-                    return self._fail("Generelt for lav ansigtsluminans.", details)
+                    return self._fail("Overall too low facial luminance.", details)
                 if p50 >= self.thr_p50_bright:
-                    return self._fail("Generelt for høj ansigtsluminans.", details)
+                    return self._fail("Overall too high facial luminance.", details)
 
         # Hvis ingen problemer blev fundet
         return CheckResult(
@@ -193,85 +194,3 @@ class exposure_check:
             details=details
         )
 
-    def _luminance_lab(self, bgr: np.ndarray) -> np.ndarray:
-        """
-        Konverterer BGR-billede til LAB-farverum og returnerer L-kanalen (lyshed).
-        LAB er mere robust mod farvevariationer end f.eks. RGB.
-        """
-        lab = cv2.cvtColor(bgr, cv2.COLOR_BGR2LAB)
-        return lab[:, :, 0]
-
-    def _landmarks_to_mask(self, img_shape, landmarker_result) -> np.ndarray:
-        """
-        Opretter en binær ansigtsmaske (0/1) ud fra ansigtslandmarks.
-        Bruges til kun at analysere lys inden for ansigtets kontur.
-        """
-        h, w = img_shape[:2]
-        if not landmarker_result or not landmarker_result.face_landmarks:
-            return np.zeros((h, w), np.uint8)
-
-        # Use landmarks from the first detected face
-        landmarks = landmarker_result.face_landmarks[0]
-
-        if len(landmarks) < 3:
-            return np.zeros((h, w), np.uint8)
-
-        # Konverter landmarks til pixelkoordinater
-        pts = np.array([(int(p.x * w), int(p.y * h)) for p in landmarks], np.int32)
-
-        # Brug konveks-hull til at dække hele ansigtet (ingen huller)
-        hull = cv2.convexHull(pts)
-
-        mask = np.zeros((h, w), np.uint8)
-        cv2.fillConvexPoly(mask, hull, 1)
-        return mask
-
-    def _refine_face_mask(self, mask: np.ndarray) -> np.ndarray:
-        """
-        Forbedrer masken:
-        - Eroderer (trækker den lidt sammen) for at fjerne hårkanter.
-        - Morfologisk 'åbning' for at fjerne små støjområder.
-        """
-        k = np.ones((3, 3), np.uint8)
-        mask = cv2.erode(mask, k, iterations=1)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, k, iterations=1)
-        return mask
-
-    def _skin_mask_lab(self, bgr: np.ndarray, face_mask: np.ndarray) -> np.ndarray:
-        """
-        Grov huddetektor i LAB inde i ansigtsmasken.
-        OpenCV-LAB har a*, b* ca. center 128. Vi bruger brede vinduer og forventer kalibrering på egne data.
-        """
-        lab = cv2.cvtColor(bgr, cv2.COLOR_BGR2LAB)
-        L, A, B = lab[:, :, 0], lab[:, :, 1], lab[:, :, 2]
-
-        # Brede hudvinduer (skal kalibreres på dit kamera/lys)
-        # a* (rød-grøn): lidt over midten → 130..175
-        # b* (gul-blå): let gulligt → 120..185
-        a_lo, a_hi = 130, 175
-        b_lo, b_hi = 120, 185
-
-        skin = (
-                (A >= a_lo) & (A <= a_hi) &
-                (B >= b_lo) & (B <= b_hi)
-        ).astype(np.uint8)
-
-        # Kun inde i ansigtet
-        skin &= face_mask.astype(np.uint8)
-
-        # Fjern små pletter
-        k = np.ones((3, 3), np.uint8)
-        skin = cv2.morphologyEx(skin, cv2.MORPH_OPEN, k, iterations=1)
-        return skin
-
-    def _robust_middle_band(self, arr: np.ndarray, low=5, high=95):
-        """
-        Skær top/bund fra (percentiler) for at undgå skygge/højlys outliers.
-        Returner de værdier der ligger mellem low- og high-percentilen.
-        """
-        if arr.size == 0:
-            return arr
-        lo = np.percentile(arr, low)
-        hi = np.percentile(arr, high)
-        mid = arr[(arr >= lo) & (arr <= hi)]
-        return mid

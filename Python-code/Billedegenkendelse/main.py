@@ -12,7 +12,7 @@ from mediapipe.tasks.python import vision
 from logic.logic_controller import LogicController
 
 
-# Syntaxen er from package.file import class/function
+# Syntaxen er from package.file import class/function.
 from logic.is_face_present.face_detector import DetectionVisualizer
 
 
@@ -30,10 +30,13 @@ if __name__ == '__main__':
     #IMAGE_FILE_NAME = "1708197244569.jpg"
     #IMAGE_FILE_NAME = "ikke_centreret.png"
     #IMAGE_FILE_NAME = "centreret.png"
-    IMAGE_FILE_NAME = "closedeyes.jpg"
+    #IMAGE_FILE_NAME = "closedeyes.jpg"
     #IMAGE_FILE_NAME = "to_close.png"
     #IMAGE_FILE_NAME = "man_with_hat.jpg"
     #IMAGE_FILE_NAME = "open_mouth.jpg"
+    #IMAGE_FILE_NAME = "MatiasNice.jpg"
+    #IMAGE_FILE_NAME = "oscarimg.jpg"
+    IMAGE_FILE_NAME = "man_with_shadow.png"
 
     IMAGE_FILE = os.path.join("images", IMAGE_FILE_NAME)
 
@@ -57,22 +60,8 @@ if __name__ == '__main__':
 
     logic_controller = LogicController()
 
-    report = logic_controller.run_analysis(IMAGE_FILE)
+    report = logic_controller.run_analysis(IMAGE_FILE, IMAGE_FILE_NAME)
 
     report.print_console()
 
-    vis = DetectionVisualizer()
-    det_res = vis.analyze_image(IMAGE_FILE_NAME)
-
-    bgr = cv2.imread(os.path.join("images", IMAGE_FILE_NAME))
-    rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-
-    overlay = vis.annotate_center_and_size(
-        rgb, det_res,
-        tol_x=0.08, tol_y=0.10,
-        min_height_ratio=0.40,  # “for langt fra” hvis under
-        max_height_ratio=0.55  # “for tæt på” hvis over
-    )
-
-    cv2.imwrite(os.path.join("out", f"{IMAGE_FILE_NAME}_center_overlay.jpg"), cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
 

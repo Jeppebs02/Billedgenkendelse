@@ -25,7 +25,7 @@ async function takePicture() {
   serverResponse.value = null
 
   const photo = await Camera.getPhoto({
-    quality: 90,
+    quality: 100,
     allowEditing: false,
     resultType: CameraResultType.Uri, // returns webPath/URL
   })
@@ -63,6 +63,9 @@ async function addPhoto() {
     // DO NOT set Content-Type manually. The browser sets it for FormData.
     const resp = await fetch('https://api.terragrouplabs.net/analyze', {
       method: 'POST',
+      headers: {
+        'x-api-key': 'a541fe33-6c48-490c-b71a-eadab16594de'
+      },
       body: form,
     })
 
