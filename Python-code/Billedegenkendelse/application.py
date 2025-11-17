@@ -61,7 +61,7 @@ def _check_file_name(file):
 
 @app.route("/")
 def hello_world():
-    return "<p>OK</p>"
+    return "<p>OK Updated</p>"
 
 
 @app.route("/analyze", methods=['POST'])
