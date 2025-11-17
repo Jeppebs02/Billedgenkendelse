@@ -169,6 +169,8 @@ fabric.properties
 
 .idea/*
 
+/Python-code/Billedegenkendelse/.idea
+
 !.idea/codeStyles
 !.idea/runConfigurations
 
