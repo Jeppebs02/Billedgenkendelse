@@ -4,9 +4,10 @@ from .head_placement_logic.head_centering_check import HeadCenteringValidator
 from .face_present_logic.face_detector import DetectionVisualizer
 from .hat_glasses_logic.hat_glasses_detector import HatGlassesDetector
 from .exposure_logic.exposure_check import exposure_check
-from .image_clear_logic.laplacian_check import PixelationDetector
+#from .image_clear_logic.laplacian_check import PixelationDetector
 from utils.types import AnalysisReport, Requirement
 from logic.face_direction_logic.face_looking_at_camera_check import FaceLookingAtCamera
+from logic.pixelation_logic.pixelation_check import PixelationCheck
 
 
 class LogicController:
@@ -16,10 +17,11 @@ class LogicController:
         self.glasses_logic = GlassesLogic()
         self.exposure_check = exposure_check()
         # Here we can set a float which is the threshold for pixelation detection
-        self.pixelation_detector = PixelationDetector()
+        #self.pixelation_detector = PixelationDetector()
         self.face_looking_at_camera = FaceLookingAtCamera()
         self.head_centering_validator = HeadCenteringValidator()
         self.visualizer_helper = None
+        self.pixelation_check = PixelationCheck()
 
     # Utility functions
 
@@ -149,7 +151,8 @@ class LogicController:
                 )
             )
         # 8) image clear check
-        checks.append(self.pixelation_detector.analyze_bytes(image_bytes, face_landmarker_result))
+        #checks.append(self.pixelation_detector.analyze_bytes(image_bytes, face_landmarker_result))
+        checks.append(self.pixelation_check.check_pixelation_bytes(image_bytes, requirement=Requirement.PIXELATION))
 
         # 9) exposure_logic / lighting check
         checks.append(self.exposure_check.analyze(image_bytes, face_landmarker_result))
