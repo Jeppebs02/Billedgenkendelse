@@ -56,15 +56,15 @@ def test_model(project_root: Path):
     print("Testing the trained model...")
     # run yolo subprocess to test the model
 
-    best = project_root / "train" / "weights" / "best.pt"
+    best = project_root / "train_v11n" / "weights" / "best.pt"
     subprocess.run([
         "yolo", "detect", "predict",
         f"model={str(best)}",
-        f"source={str(project_root / 'data' / 'validation' / 'images')}",
+        f"source={str(project_root / 'data' / 'test')}",
         "save=True"
     ], check=True)
 
-    for image_path in glob.glob(f'/content/runs/detect/predict/*.jpg')[:40]:
+    for image_path in glob.glob(f'/content/runs/detect/predict/*.jpg')[:200]:
         display(Image(filename=image_path, height=400))
         print('\n')
 
@@ -89,13 +89,13 @@ if __name__ == "__main__":
     #prepare_data(project_root)
 
     # 2) Create data.yaml (requires classes.txt)
-    data_yaml = create_data_yaml(project_root)
-    if not data_yaml:
-        raise SystemExit(1)
+    #data_yaml = create_data_yaml(project_root)
+    #if not data_yaml:
+        #raise SystemExit(1)
 
     # 3) Train — point YOLO to the absolute path of data.yaml
-    train_model(project_root)
+   #train_model(project_root)
 
-    #test_model(project_root)
+    test_model(project_root)
 
 
