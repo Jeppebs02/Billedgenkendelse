@@ -13,7 +13,7 @@ from logic.logic_controller import LogicController
 
 
 # Syntaxen er from package.file import class/function.
-from logic.is_face_present.face_detector import DetectionVisualizer
+from logic.face_present_logic.face_detector import DetectionVisualizer
 
 
 # Denne funktion opretter en mappe, hvis den ikke findes

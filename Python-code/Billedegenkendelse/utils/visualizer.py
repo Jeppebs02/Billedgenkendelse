@@ -1,22 +1,19 @@
-from typing import Tuple, Union, Optional, List
+from typing import Tuple, Union, Optional
 import math
 import cv2
 import numpy as np
 import os
 import mediapipe as mp
-from PIL.ImageChops import overlay
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
 from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
 import matplotlib.pyplot as plt
 
-from logic.exposure.exposure_check import exposure_check
-from logic.face_direction.face_looking_at_camera import FaceLookingAtCamera
-from logic.head_placement.head_centering_validator import HeadCenteringConfig
-from logic.types import CheckResult, Requirement, Severity
+from logic.exposure_logic.exposure_check import exposure_check
+from logic.face_direction_logic.face_looking_at_camera_check import FaceLookingAtCamera
+from logic.head_placement_logic.head_centering_check import HeadCenteringConfig
+from utils.types import CheckResult
 from utils import image_io
-from utils.image_io import bytes_to_rgb_np
+
 
 class VisualizerHelper:
     def __init__(self, IMAGE_FILE_NAME):

@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from pathlib import Path
 
-from logic.types import CheckResult, Requirement, Severity
+from utils.types import CheckResult, Requirement, Severity
 from utils.picture_modefication import picture_modefication
 
 

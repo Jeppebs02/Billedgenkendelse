@@ -1,16 +1,11 @@
-from typing import Tuple, Union, Optional, List
+from typing import Tuple, Optional, List
 import math
-import cv2
-import numpy as np
 import os
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-from mediapipe import solutions
-from mediapipe.framework.formats import landmark_pb2
-import matplotlib.pyplot as plt
 
-from logic.types import CheckResult, Requirement, Severity
+from utils.types import CheckResult, Requirement, Severity
 from utils.image_io import bytes_to_rgb_np
 
 

@@ -1,11 +1,8 @@
-from mediapipe.tasks.python.components.containers.detections import DetectionResult
-from mediapipe.tasks.python.vision.face_detector import FaceDetector
 from mediapipe.tasks.python.vision.face_landmarker import FaceLandmarkerResult
-from logic.types import *
+from utils.types import *
 import math
 
-import logic.types
-from logic.types import CheckResult
+from utils.types import CheckResult
 
 class FaceLookingAtCamera:
     def __init__(self, tolerance_yaw_degrees=7, tolerance_pitch_degrees=15):

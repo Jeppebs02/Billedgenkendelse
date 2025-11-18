@@ -1,16 +1,12 @@
 from utils.visualizer import VisualizerHelper
-from .glasses_logic.glasses_logic import GlassesLogic
-from .head_placement.head_centering_validator import HeadCenteringValidator
-from .is_face_present.face_detector import DetectionVisualizer
-from .is_hat_glasses.hat_glasses_detector import HatGlassesDetector
-from .exposure.exposure_check import exposure_check
-from .is_image_clear.pixelation_detector import PixelationDetector
-from .types import AnalysisReport, CheckResult, Requirement, Severity
-from mediapipe.tasks.python import vision
-from typing import Tuple, Union, Optional, List
-from logic.face_direction.face_looking_at_camera import FaceLookingAtCamera
-import math
-
+from .glare_sunglasses_logic.glare_sunglasses_check import GlassesLogic
+from .head_placement_logic.head_centering_check import HeadCenteringValidator
+from .face_present_logic.face_detector import DetectionVisualizer
+from .hat_glasses_logic.hat_glasses_detector import HatGlassesDetector
+from .exposure_logic.exposure_check import exposure_check
+from .image_clear_logic.laplacian_check import PixelationDetector
+from utils.types import AnalysisReport, Requirement
+from logic.face_direction_logic.face_looking_at_camera_check import FaceLookingAtCamera
 
 
 class LogicController:
@@ -80,7 +76,7 @@ class LogicController:
         # 8) image clear check
         checks.append(self.pixelation_detector.analyze_bytes(image_bytes, face_landmarker_result))
 
-        # 9) exposure / lighting check
+        # 9) exposure_logic / lighting check
         exposure_check_result = self.exposure_check.analyze(image_bytes, face_landmarker_result)
         checks.append(exposure_check_result)
 
@@ -155,7 +151,7 @@ class LogicController:
         # 8) image clear check
         checks.append(self.pixelation_detector.analyze_bytes(image_bytes, face_landmarker_result))
 
-        # 9) exposure / lighting check
+        # 9) exposure_logic / lighting check
         checks.append(self.exposure_check.analyze(image_bytes, face_landmarker_result))
 
         # 10) face looking straight

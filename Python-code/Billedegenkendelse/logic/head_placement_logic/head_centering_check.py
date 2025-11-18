@@ -1,11 +1,11 @@
-# head_centering_validator.py
+# head_centering_check.py
 import os
 import cv2
 import numpy as np
 from dataclasses import dataclass
 from typing import Optional
 from mediapipe.tasks.python import vision
-from ..types import CheckResult, Requirement, Severity
+from utils.types import CheckResult, Requirement, Severity
 
 @dataclass
 class HeadCenteringConfig:
