@@ -6,7 +6,7 @@ from typing import Optional
 import cv2
 import numpy as np
 from PIL import Image
-from sympy import false
+
 
 from logic.pixelation_logic.Pixelation_detection import PixelationDetectorV2
 from utils.types import CheckResult, Requirement, Severity
