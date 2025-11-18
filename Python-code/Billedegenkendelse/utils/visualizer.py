@@ -13,6 +13,8 @@ from logic.face_direction_logic.face_looking_at_camera_check import FaceLookingA
 from logic.head_placement_logic.head_centering_check import HeadCenteringConfig
 from utils.types import CheckResult
 from utils import image_io
+from logic.pixelation_logic.pixelation_detection import PixelationDetectorV2
+
 
 
 class VisualizerHelper:
@@ -20,6 +22,7 @@ class VisualizerHelper:
         self.IMAGE_FILE_NAME = IMAGE_FILE_NAME
         self.OUT_DIR = self.create_out_dir(IMAGE_FILE_NAME)
         self.exposure_check = exposure_check()
+        self.pixelation_detector = PixelationDetectorV2()
 
         os.makedirs(self.OUT_DIR, exist_ok=True)
 
@@ -161,6 +164,66 @@ class VisualizerHelper:
         plt.show()
 
         #Annotations
+
+    def _pixelation_debug_from_bgr(self, bgr_img: np.ndarray) -> np.ndarray:
+            """
+            Laver et 3-panel debug-billede:
+              [original] | [block-variance heatmap] | [strong edges overlay]
+            Returnerer BGR (klar til cv2.imwrite).
+            """
+            if bgr_img is None or bgr_img.size == 0:
+                raise ValueError("Empty image passed to _pixelation_debug_from_bgr")
+
+            gray = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2GRAY)
+
+            # --- 1) Blok-varians via detektoren ---
+            mean_var, var_map = self.pixelation_detector._block_variance(gray)
+
+            # var_map: (by, bx) -> skaler op til billedstørrelse
+            if var_map.size == 0:
+                var_heatmap = np.zeros_like(bgr_img)
+            else:
+                var_map_norm = cv2.normalize(var_map, None, 0, 255, cv2.NORM_MINMAX)
+                var_map_norm = var_map_norm.astype(np.uint8)
+
+                h, w = gray.shape
+                var_big = cv2.resize(
+                    var_map_norm,
+                    (w, h),
+                    interpolation=cv2.INTER_NEAREST  # så blokke er tydelige
+                )
+
+                var_heatmap = cv2.applyColorMap(var_big, cv2.COLORMAP_JET)
+
+            # --- 2) Stærke kanter (gradient magnitude >= gd_high_thr) ---
+            gray32 = gray.astype(np.float32)
+            gx = cv2.Sobel(gray32, cv2.CV_32F, 1, 0, ksize=3)
+            gy = cv2.Sobel(gray32, cv2.CV_32F, 0, 1, ksize=3)
+            mag = np.sqrt(gx * gx + gy * gy)
+
+            strong_mask = mag >= self.pixelation_detector.gd_high_thr
+            strong_mask_u8 = (strong_mask.astype(np.uint8) * 255)
+
+            strong_edges_bgr = bgr_img.copy()
+            red_overlay = np.zeros_like(bgr_img)
+            red_overlay[:, :, 2] = 255  # ren rød
+
+            alpha = 0.8
+            mask_3ch = cv2.merge([strong_mask_u8] * 3)
+
+            strong_edges_bgr = np.where(
+                mask_3ch == 255,
+                (alpha * red_overlay + (1 - alpha) * strong_edges_bgr).astype(np.uint8),
+                strong_edges_bgr
+            )
+
+            # --- 3) Saml panelerne horisontalt ---
+            h1, w1, _ = bgr_img.shape
+            var_heatmap = cv2.resize(var_heatmap, (w1, h1))
+            strong_edges_bgr = cv2.resize(strong_edges_bgr, (w1, h1))
+
+            debug_img = cv2.hconcat([bgr_img, var_heatmap, strong_edges_bgr])
+            return debug_img
 
     def annotate_facedetector(self, image_bytes, detection_result):
 
@@ -553,3 +616,56 @@ class VisualizerHelper:
         print(f"Annotated image written to {OUT_FILE}")
 
         return output_image
+
+
+    def visualize_pixelation(
+            self,
+            image_bytes: bytes,
+            detection_result=None,
+            crop_to_face: bool = True,
+    ) -> np.ndarray:
+        """
+        Visualiserer pixelation:
+          - bruger evt. største face-bbox som ROI
+          - laver 3-panel debug-billede
+          - gemmer i out/ og returnerer BGR-array
+        """
+        # bytes -> BGR
+        arr = np.frombuffer(image_bytes, np.uint8)
+        bgr = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+        if bgr is None:
+            raise ValueError("Could not decode image bytes in visualize_pixelation")
+
+        roi = bgr
+
+        # Hvis vi vil kun kigge på ansigtet og har detection_result
+        if crop_to_face and detection_result is not None and getattr(detection_result, "detections", None):
+            det = max(
+                detection_result.detections,
+                key=lambda d: d.bounding_box.width * d.bounding_box.height
+            )
+            bb = det.bounding_box
+            x, y, w, h = bb.origin_x, bb.origin_y, bb.width, bb.height
+
+            x = max(0, x)
+            y = max(0, y)
+            x2 = min(bgr.shape[1], x + w)
+            y2 = min(bgr.shape[0], y + h)
+
+            face_roi = bgr[y:y2, x:x2].copy()
+            if face_roi.size != 0:
+                roi = face_roi  # ellers falder vi tilbage til hele billedet
+
+        debug_img = self._pixelation_debug_from_bgr(roi)
+
+        # Gem fil
+        OUT_FILE_NAME = (
+            self.create_out_name(self.IMAGE_FILE_NAME)
+            + "_pixelation_debug"
+            + self.create_out_ext(self.IMAGE_FILE_NAME)
+        )
+        OUT_FILE = os.path.join(self.OUT_DIR, OUT_FILE_NAME)
+        cv2.imwrite(OUT_FILE, debug_img)
+        print(f"Pixelation debug image written to {OUT_FILE}")
+
+        return debug_img

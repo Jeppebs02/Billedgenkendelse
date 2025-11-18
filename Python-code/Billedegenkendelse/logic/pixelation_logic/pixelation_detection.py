@@ -1,4 +1,4 @@
-# logic/pixelation_logic/Pixelation_detection.py
+# logic/pixelation_logic/pixelation_detection.py
 
 import cv2
 import numpy as np

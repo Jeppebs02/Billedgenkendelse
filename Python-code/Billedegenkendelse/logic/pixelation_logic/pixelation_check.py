@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image
 
 
-from logic.pixelation_logic.Pixelation_detection import PixelationDetectorV2
+from logic.pixelation_logic.pixelation_detection import PixelationDetectorV2
 from utils.types import CheckResult, Requirement, Severity
 
 
