@@ -1,13 +1,9 @@
-# logic/pixelation_logic/pixelation_check.py
-
 from io import BytesIO
 from typing import Optional
 
 import cv2
 import numpy as np
 from PIL import Image
-
-
 from logic.pixelation_logic.pixelation_detection import PixelationDetectorV2
 from utils.types import CheckResult, Requirement, Severity
 

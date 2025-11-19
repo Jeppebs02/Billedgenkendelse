@@ -34,7 +34,7 @@ class PixelationDetectorV2:
         mean_var, _ = self._block_variance(gray)
         gd_ratio, gd_counts = self._gradient_discontinuity_ratio(gray)
 
-        is_pixelated = (mean_var < self.var_thr) or (gd_ratio < self.gd_ratio_thr)
+        is_pixelated = (mean_var < self.var_thr) and (gd_ratio < self.gd_ratio_thr)
 
         details = {
             "mean_block_variance": float(mean_var),
