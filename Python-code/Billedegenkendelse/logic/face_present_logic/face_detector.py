@@ -57,6 +57,7 @@ class DetectionVisualizer:
     def _mean(self, xs):
         '''Returns the average of numbers in an interable'''
         return sum(xs) / max(1, len(xs))
+    
     # Eye Logic
     def _calculate_ear(self, eye_landmarks: List) -> float:
         """
