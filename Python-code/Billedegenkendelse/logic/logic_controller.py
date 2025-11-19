@@ -155,7 +155,7 @@ class LogicController:
         # 8) image clear check
         checks.append(self.pixelation_detector.analyze_bytes(image_bytes, face_landmarker_result))
 
-        #8.5)
+        #8.5) pixelation check
         checks.append(self.pixelation_check.check_pixelation_bytes(image_bytes, requirement=Requirement.PIXELATION))
 
         # 9) exposure_logic / lighting check
