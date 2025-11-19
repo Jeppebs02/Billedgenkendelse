@@ -333,7 +333,7 @@ class DetectionVisualizer:
         right_ear = self._calculate_ear(right_eye)
 
         # Average EAR for both eyes
-        avg_ear = (left_ear + right_ear) / 2.0
+        avg_ear = (left_ear + right_ear) / 1.5
 
         # The EAR is typically around 0.25-0.3 for open eyes and drops towards 0 for closed eyes.
         eyes_visible = avg_ear > ear_threshold
