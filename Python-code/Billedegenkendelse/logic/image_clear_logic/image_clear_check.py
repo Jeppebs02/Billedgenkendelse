@@ -1,7 +1,15 @@
-class image_clear_check:
+from utils.types import CheckResult, Requirement, Severity
+from utils.picture_modefication import picture_modefication
+
+from .laplacian_detector import LaplacienDetector
+from .tenengrad_detector import TenengradDetector
+from .background_detector import BackgroundDetector
+
+
+class ImageClearCheck(picture_modefication):
     """
     High-level checker der bruger:
-      - LaplacianDetector (ansigtsskarphed)
+      - LaplacienDetector (ansigtsskarphed)
       - TenengradDetector (ansigtsskarphed)
       - BackgroundDetector (baggrundsimplicitet)
     og returnerer ét samlet CheckResult for IMAGE_CLEAR.
@@ -9,11 +17,12 @@ class image_clear_check:
 
     def __init__(
         self,
-        laplacian_detector: laplacian_detector | None = None,
-        tenengrad_detector: tenengrad_detector | None = None,
-        background_detector: background_detector | None = None,
+        laplacian_detector: LaplacienDetector | None = None,
+        tenengrad_detector: TenengradDetector | None = None,
+        background_detector: BackgroundDetector | None = None,
     ):
-        self.laplacian_detector = laplacian_detector or LaplacianDetector()
+        # Hvis der ikke gives instanser udefra, laver vi bare nye
+        self.laplacian_detector = laplacian_detector or LaplacienDetector()
         self.tenengrad_detector = tenengrad_detector or TenengradDetector()
         self.background_detector = background_detector or BackgroundDetector()
 
@@ -26,7 +35,8 @@ class image_clear_check:
 
         if passed:
             message = (
-                "Image is clear: face is sharp (Laplacian + Tenengrad) and background is simple/uniform."
+                "Image is clear: face is sharp (Laplacian + Tenengrad) "
+                "and background is simple/uniform."
             )
         else:
             failed_parts = []
@@ -37,7 +47,11 @@ class image_clear_check:
             if not bg_res.passed:
                 failed_parts.append("Background check failed")
 
-            message = "Image did not meet all requirements: " + ", ".join(failed_parts) + "."
+            message = (
+                "Image did not meet all requirements: "
+                + ", ".join(failed_parts)
+                + "."
+            )
 
         details = {
             "laplacian": lap_res.details,
@@ -54,12 +68,6 @@ class image_clear_check:
         )
 
     def analyze_image(self, image_path: str) -> CheckResult:
-        """
-        Fil-baseret version uden landmarker.
-        (Her vil ansigtet ikke blive isoleret – det afhænger af dine behov.
-         Hvis du vil, kan vi lave en variant, der loader filen til bytes
-         og bruger en ekstern landmarker-pipeline.)
-        """
         with open(image_path, "rb") as f:
             image_bytes = f.read()
         return self.analyze_bytes(image_bytes, landmarker_result=None)

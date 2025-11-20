@@ -1,4 +1,11 @@
-class tenengrad_detector(picture_modefication):
+import cv2
+import numpy as np
+from pathlib import Path
+
+from utils.types import CheckResult, Requirement, Severity
+from utils.picture_modefication import picture_modefication
+
+class TenengradDetector(picture_modefication):
     """
     Checks sharpness using Tenengrad (Sobel-gradient baseret).
     Fokus: ansigt hvis muligt, ellers hele billedet.
@@ -12,6 +19,7 @@ class tenengrad_detector(picture_modefication):
         self.face_threshold = float(face_threshold)
         self.min_face_pixels = int(min_face_pixels)
         self.full_image_threshold = float(face_threshold)
+
 
     def _tenengrad(
         self,

@@ -6,7 +6,7 @@ from utils.types import CheckResult, Requirement, Severity
 from utils.picture_modefication import picture_modefication
 
 
-class laplacian_detector(picture_modefication):
+class LaplacienDetector(picture_modefication):
     """
     Checks sharpness using variance of Laplacian.
     Fokus: ansigt hvis der findes en brugbar facemaske, ellers hele billedet.
@@ -19,9 +19,8 @@ class laplacian_detector(picture_modefication):
     ):
         self.face_threshold = float(face_threshold)
         self.min_face_pixels = int(min_face_pixels)
-
-        # legacy / fallback threshold for full image
         self.full_image_threshold = float(face_threshold)
+
 
     def _variance_of_laplacian(
         self,

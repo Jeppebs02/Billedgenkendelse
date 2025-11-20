@@ -5,7 +5,7 @@ from utils.types import CheckResult, Requirement, Severity
 from utils.picture_modefication import picture_modefication
 
 
-class background_detector(picture_modefication):
+class BackgroundDetector(picture_modefication):
     """
     Checks whether background color is uniform using Lab RMS distance.
     NO Laplacian. NO Tenengrad.
@@ -16,10 +16,6 @@ class background_detector(picture_modefication):
         max_background_color_rms: float = 8.0,
         min_background_pixels: int = 2000,
     ):
-        """
-        :param max_background_color_rms: Maximum allowed RMS distance in Lab.
-        :param min_background_pixels: Minimum number of background pixels after removing face.
-        """
         self.max_background_color_rms = float(max_background_color_rms)
         self.min_background_pixels = int(min_background_pixels)
 

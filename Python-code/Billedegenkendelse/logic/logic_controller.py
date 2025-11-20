@@ -1,14 +1,14 @@
 from utils.visualizer import VisualizerHelper
+from utils.types import AnalysisReport, Requirement
+
 from .glare_sunglasses_logic.glare_sunglasses_check import GlassesLogic
 from .head_placement_logic.head_centering_check import HeadCenteringValidator
 from .face_present_logic.face_detector import DetectionVisualizer
 from .hat_glasses_logic.hat_glasses_detector import HatGlassesDetector
 from .exposure_logic.exposure_check import exposure_check
-# OLD: from .image_clear_logic.laplacian_check import PixelationDetector
-from .image_clear_logic.image_clear_check import ImageClearCheck  # <-- NY
-from utils.types import AnalysisReport, Requirement
-from logic.face_direction_logic.face_looking_at_camera_check import FaceLookingAtCamera
-from logic.pixelation_logic.pixelation_check import PixelationCheck
+from .image_clear_logic.image_clear_check import ImageClearCheck
+from .face_direction_logic.face_looking_at_camera_check import FaceLookingAtCamera
+from .pixelation_logic.pixelation_check import PixelationCheck
 
 
 class LogicController:
@@ -17,10 +17,7 @@ class LogicController:
         self.hat_glasses_detector = HatGlassesDetector()
         self.glasses_logic = GlassesLogic()
         self.exposure_check = exposure_check()
-
-        # New high-level image-clear checker (Laplacian + Tenengrad + Background)
         self.image_clear_check = ImageClearCheck()
-
         self.face_looking_at_camera = FaceLookingAtCamera()
         self.head_centering_validator = HeadCenteringValidator()
         self.visualizer_helper = None
@@ -87,11 +84,12 @@ class LogicController:
             )
 
         # 8) image clear check (new collective check: face sharpness + background)
-        image_clear_result = self.image_clear_check.analyze_bytes(
+        checks.append(
+            self.image_clear_check.analyze_bytes(
             image_bytes=image_bytes,
             landmarker_result=face_landmarker_result,
+            )
         )
-        checks.append(image_clear_result)
 
         # 8.5) pixelation check (separat requirement, f.eks. blockiness / compression)
         checks.append(
@@ -213,8 +211,8 @@ class LogicController:
         # 8) image clear check (Laplacian + Tenengrad + Background)
         checks.append(
             self.image_clear_check.analyze_bytes(
-                image_bytes=image_bytes,
-                landmarker_result=face_landmarker_result,
+            image_bytes=image_bytes,
+            landmarker_result=face_landmarker_result,
             )
         )
 
