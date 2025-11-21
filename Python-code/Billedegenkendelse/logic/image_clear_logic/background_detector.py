@@ -13,8 +13,8 @@ class BackgroundDetector(picture_modefication):
 
     def __init__(
         self,
-        max_background_color_rms: float = 8.0,
-        min_background_pixels: int = 2000,
+        max_background_color_rms: float = 50.0,
+        min_background_pixels: int = 200,
     ):
         self.max_background_color_rms = float(max_background_color_rms)
         self.min_background_pixels = int(min_background_pixels)
