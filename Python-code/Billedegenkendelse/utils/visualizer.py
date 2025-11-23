@@ -13,7 +13,11 @@ from logic.face_direction_logic.face_looking_at_camera_check import FaceLookingA
 from logic.head_placement_logic.head_centering_check import HeadCenteringConfig
 from utils.types import CheckResult
 from utils import image_io
+<<<<<<< Updated upstream
 from logic.pixelation_logic.pixelation_detection import PixelationDetectorV2
+=======
+from typing import List
+>>>>>>> Stashed changes
 
 
 
@@ -617,6 +621,7 @@ class VisualizerHelper:
 
         return output_image
 
+<<<<<<< Updated upstream
 
     def visualize_pixelation(
             self,
@@ -669,3 +674,114 @@ class VisualizerHelper:
         print(f"Pixelation debug image written to {OUT_FILE}")
 
         return debug_img
+=======
+    def annotate_eyes_visible(
+            self,
+            image_bytes,
+            landmark_result,
+            ear_threshold: float = 0.2,
+    ) -> np.ndarray:
+        """
+        Visualiserer EAR (Eye Aspect Ratio) med:
+          - de 6 punkter pr. øje, der bruges til EAR
+          - linjer p1–p4 (horisontal), p2–p6 og p3–p5 (vertikale)
+          - tekstpanel med EAR-værdier og status
+        """
+        if not landmark_result.face_landmarks or len(landmark_result.face_landmarks) == 0:
+            raise ValueError("No landmarks found for eyes visualization.")
+
+        # Filnavn + mappe
+        OUT_FILE_NAME = (
+                self.create_out_name(self.IMAGE_FILE_NAME)
+                + "_annotate_eyes_visible"
+                + self.create_out_ext(self.IMAGE_FILE_NAME)
+        )
+        OUT_FILE = os.path.join(self.OUT_DIR, OUT_FILE_NAME)
+        os.makedirs(self.OUT_DIR, exist_ok=True)
+
+        # Dekod billede
+        image_rgb = image_io.bytes_to_rgb_np(image_bytes)
+        annot = image_rgb.copy()
+        H, W = annot.shape[:2]
+
+        landmarks = landmark_result.face_landmarks[0]
+
+        LEFT_EYE_LANDMARKS = [362, 385, 387, 263, 373, 380]
+        RIGHT_EYE_LANDMARKS = [33, 160, 158, 133, 153, 144]
+
+        def ear_for_indices(indices: list[int]) -> float:
+            pts = [landmarks[i] for i in indices]
+
+            def dist(a, b):
+                dx, dy = (a.x - b.x), (a.y - b.y)
+                return math.hypot(dx, dy)
+
+            p2_p6 = dist(pts[1], pts[5])
+            p3_p5 = dist(pts[2], pts[4])
+            p1_p4 = dist(pts[0], pts[3])
+            return (p2_p6 + p3_p5) / (2.0 * p1_p4) if p1_p4 > 0 else 0.0
+
+        left_ear = ear_for_indices(LEFT_EYE_LANDMARKS)
+        right_ear = ear_for_indices(RIGHT_EYE_LANDMARKS)
+        avg_ear = (left_ear + right_ear) / 2.0
+
+        eyes_visible = avg_ear > ear_threshold
+        main_color = (0, 255, 0) if eyes_visible else (0, 0, 255)  # grøn/rød
+
+        def lm_to_px(idx_list: list[int]) -> list[tuple[int, int]]:
+            pts = []
+            for idx in idx_list:
+                lm = landmarks[idx]
+                x = int(lm.x * W)
+                y = int(lm.y * H)
+                pts.append((x, y))
+            return pts
+
+        def draw_eye_points(indices: list[int], ear: float):
+            pts = lm_to_px(indices)
+            # p1..p6
+            p1, p2, p3, p4, p5, p6 = pts
+
+            # Horisontal linje p1–p4 (gul)
+            cv2.line(annot, p1, p4, (0, 255, 255), 2)
+            # Vertikale linjer p2–p6 og p3–p5 (blå)
+            cv2.line(annot, p2, p6, (255, 0, 0), 2)
+            cv2.line(annot, p3, p5, (255, 0, 0), 2)
+
+            # Tegn selve punkterne (små cirkler)
+            for (x, y) in pts:
+                cv2.circle(annot, (x, y), 4, main_color, -1)
+
+        # Tegn venstre og højre øje
+        draw_eye_points(LEFT_EYE_LANDMARKS, left_ear)
+        draw_eye_points(RIGHT_EYE_LANDMARKS, right_ear)
+
+        # Info-panel oppe i hjørnet
+        panel_w, panel_h = 430, 70
+        x0, y0 = 10, 10
+        x1, y1 = x0 + panel_w, y0 + panel_h
+
+        overlay = annot.copy()
+        cv2.rectangle(overlay, (x0, y0), (x1, y1), main_color, -1)
+        alpha = 0.25
+        annot = cv2.addWeighted(overlay, alpha, annot, 1 - alpha, 0)
+
+        status_text = "Eyes visible" if eyes_visible else "Eyes closed / not visible"
+        txt_color = (255, 255, 255)
+
+        text1 = f"EAR L: {left_ear:.3f}   R: {right_ear:.3f}"
+        text2 = f"Avg: {avg_ear:.3f}   Threshold: {ear_threshold:.3f}"
+        text3 = f"Status: {status_text}"
+
+        cv2.putText(annot, text1, (x0 + 10, y0 + 22),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, txt_color, 2, cv2.LINE_AA)
+        cv2.putText(annot, text2, (x0 + 10, y0 + 42),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, txt_color, 2, cv2.LINE_AA)
+        cv2.putText(annot, text3, (x0 + 10, y0 + 62),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, txt_color, 2, cv2.LINE_AA)
+
+        cv2.imwrite(OUT_FILE, cv2.cvtColor(annot, cv2.COLOR_RGB2BGR))
+        print(f"Annotated image written to {OUT_FILE}")
+
+        return annot
+>>>>>>> Stashed changes

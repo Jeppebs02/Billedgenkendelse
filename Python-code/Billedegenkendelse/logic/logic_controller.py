@@ -100,7 +100,15 @@ class LogicController:
             checker_instance=self.exposure_check,
             detection_result=face_landmarker_result
         )
+<<<<<<< Updated upstream
         self.visualizer_helper.visualize_pixelation(image_bytes, detection_result=face_detector_result)
+=======
+        self.visualizer_helper.annotate_eyes_visible(
+            image_bytes=image_bytes,
+            landmark_result=face_landmarker_result,
+            ear_threshold=0.2,  # eller hent den fra et config hvis du gør det dynamisk
+        )
+>>>>>>> Stashed changes
 
         overall_pass = all(c.passed for c in checks)
         return AnalysisReport(
