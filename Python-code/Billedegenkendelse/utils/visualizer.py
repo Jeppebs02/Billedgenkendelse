@@ -13,11 +13,11 @@ from logic.face_direction_logic.face_looking_at_camera_check import FaceLookingA
 from logic.head_placement_logic.head_centering_check import HeadCenteringConfig
 from utils.types import CheckResult
 from utils import image_io
-<<<<<<< Updated upstream
+
 from logic.pixelation_logic.pixelation_detection import PixelationDetectorV2
-=======
+
 from typing import List
->>>>>>> Stashed changes
+
 
 
 
@@ -621,7 +621,7 @@ class VisualizerHelper:
 
         return output_image
 
-<<<<<<< Updated upstream
+
 
     def visualize_pixelation(
             self,
@@ -674,7 +674,7 @@ class VisualizerHelper:
         print(f"Pixelation debug image written to {OUT_FILE}")
 
         return debug_img
-=======
+
     def annotate_eyes_visible(
             self,
             image_bytes,
@@ -784,4 +784,3 @@ class VisualizerHelper:
         print(f"Annotated image written to {OUT_FILE}")
 
         return annot
->>>>>>> Stashed changes
