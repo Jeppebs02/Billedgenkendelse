@@ -111,7 +111,7 @@ class LogicController:
 
     def run_analysis_bytes(self, image_bytes: bytes, threshold: float = 0.5) -> AnalysisReport:
         """
-        In-memory analysis (no filed needed ;) ). Mirrors run_analysis(), but calls *bytes* APIs from face detector and landmarker AND hat_glasses.
+        In-memory analysis (no filed needed ;) ). Mirrors run_analysis(), but calls *bytes* APIs from face detector and landmarker AND hat_glasses. 
         """
         # Face + landmarks (bytes-based)
         face_detector_result = self.face_detector.analyze_bytes(image_bytes)
