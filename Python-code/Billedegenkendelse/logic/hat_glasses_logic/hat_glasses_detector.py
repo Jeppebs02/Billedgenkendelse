@@ -3,7 +3,7 @@ from ultralytics import YOLO
 from PIL import Image
 import os
 
-from logic.types import CheckResult, Requirement, Severity
+from utils.types import CheckResult, Requirement, Severity
 from utils.image_io import bytes_to_pil
 
 class HatGlassesDetector:

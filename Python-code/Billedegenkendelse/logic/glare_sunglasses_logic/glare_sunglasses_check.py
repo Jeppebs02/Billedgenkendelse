@@ -1,4 +1,4 @@
-# logic/glasses_logic/glasses_logic.py
+# logic/glare_sunglasses_logic/glare_sunglasses_logic.py
 
 from __future__ import annotations
 
@@ -7,10 +7,9 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import cv2
-from mediapipe.tasks.python.components.containers.detections import DetectionResult
 from mediapipe.tasks.python.vision.face_detector import FaceDetectorResult
 from mediapipe.tasks.python.vision.face_landmarker import FaceLandmarkerResult
-from logic.types import Requirement, Severity, CheckResult
+from utils.types import Requirement, Severity, CheckResult
 
 
 

@@ -1,28 +1,32 @@
-from typing import Tuple, Union, Optional, List
+from typing import Tuple, Union, Optional
 import math
 import cv2
 import numpy as np
 import os
 import mediapipe as mp
-from PIL.ImageChops import overlay
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
 from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
 import matplotlib.pyplot as plt
 
-from logic.exposure.exposure_check import exposure_check
-from logic.face_direction.face_looking_at_camera import FaceLookingAtCamera
-from logic.head_placement.head_centering_validator import HeadCenteringConfig
-from logic.types import CheckResult, Requirement, Severity
+from logic.exposure_logic.exposure_check import exposure_check
+from logic.face_direction_logic.face_looking_at_camera_check import FaceLookingAtCamera
+from logic.head_placement_logic.head_centering_check import HeadCenteringConfig
+from utils.types import CheckResult
 from utils import image_io
-from utils.image_io import bytes_to_rgb_np
+
+from logic.pixelation_logic.pixelation_detection import PixelationDetectorV2
+
+from typing import List
+
+
+
 
 class VisualizerHelper:
     def __init__(self, IMAGE_FILE_NAME):
         self.IMAGE_FILE_NAME = IMAGE_FILE_NAME
         self.OUT_DIR = self.create_out_dir(IMAGE_FILE_NAME)
         self.exposure_check = exposure_check()
+        self.pixelation_detector = PixelationDetectorV2()
 
         os.makedirs(self.OUT_DIR, exist_ok=True)
 
@@ -164,6 +168,66 @@ class VisualizerHelper:
         plt.show()
 
         #Annotations
+
+    def _pixelation_debug_from_bgr(self, bgr_img: np.ndarray) -> np.ndarray:
+            """
+            Laver et 3-panel debug-billede:
+              [original] | [block-variance heatmap] | [strong edges overlay]
+            Returnerer BGR (klar til cv2.imwrite).
+            """
+            if bgr_img is None or bgr_img.size == 0:
+                raise ValueError("Empty image passed to _pixelation_debug_from_bgr")
+
+            gray = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2GRAY)
+
+            # --- 1) Blok-varians via detektoren ---
+            mean_var, var_map = self.pixelation_detector._block_variance(gray)
+
+            # var_map: (by, bx) -> skaler op til billedstørrelse
+            if var_map.size == 0:
+                var_heatmap = np.zeros_like(bgr_img)
+            else:
+                var_map_norm = cv2.normalize(var_map, None, 0, 255, cv2.NORM_MINMAX)
+                var_map_norm = var_map_norm.astype(np.uint8)
+
+                h, w = gray.shape
+                var_big = cv2.resize(
+                    var_map_norm,
+                    (w, h),
+                    interpolation=cv2.INTER_NEAREST  # så blokke er tydelige
+                )
+
+                var_heatmap = cv2.applyColorMap(var_big, cv2.COLORMAP_JET)
+
+            # --- 2) Stærke kanter (gradient magnitude >= gd_high_thr) ---
+            gray32 = gray.astype(np.float32)
+            gx = cv2.Sobel(gray32, cv2.CV_32F, 1, 0, ksize=3)
+            gy = cv2.Sobel(gray32, cv2.CV_32F, 0, 1, ksize=3)
+            mag = np.sqrt(gx * gx + gy * gy)
+
+            strong_mask = mag >= self.pixelation_detector.gd_high_thr
+            strong_mask_u8 = (strong_mask.astype(np.uint8) * 255)
+
+            strong_edges_bgr = bgr_img.copy()
+            red_overlay = np.zeros_like(bgr_img)
+            red_overlay[:, :, 2] = 255  # ren rød
+
+            alpha = 0.8
+            mask_3ch = cv2.merge([strong_mask_u8] * 3)
+
+            strong_edges_bgr = np.where(
+                mask_3ch == 255,
+                (alpha * red_overlay + (1 - alpha) * strong_edges_bgr).astype(np.uint8),
+                strong_edges_bgr
+            )
+
+            # --- 3) Saml panelerne horisontalt ---
+            h1, w1, _ = bgr_img.shape
+            var_heatmap = cv2.resize(var_heatmap, (w1, h1))
+            strong_edges_bgr = cv2.resize(strong_edges_bgr, (w1, h1))
+
+            debug_img = cv2.hconcat([bgr_img, var_heatmap, strong_edges_bgr])
+            return debug_img
 
     def annotate_facedetector(self, image_bytes, detection_result):
 
@@ -556,3 +620,167 @@ class VisualizerHelper:
         print(f"Annotated image written to {OUT_FILE}")
 
         return output_image
+
+
+
+    def visualize_pixelation(
+            self,
+            image_bytes: bytes,
+            detection_result=None,
+            crop_to_face: bool = True,
+    ) -> np.ndarray:
+        """
+        Visualiserer pixelation:
+          - bruger evt. største face-bbox som ROI
+          - laver 3-panel debug-billede
+          - gemmer i out/ og returnerer BGR-array
+        """
+        # bytes -> BGR
+        arr = np.frombuffer(image_bytes, np.uint8)
+        bgr = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+        if bgr is None:
+            raise ValueError("Could not decode image bytes in visualize_pixelation")
+
+        roi = bgr
+
+        # Hvis vi vil kun kigge på ansigtet og har detection_result
+        if crop_to_face and detection_result is not None and getattr(detection_result, "detections", None):
+            det = max(
+                detection_result.detections,
+                key=lambda d: d.bounding_box.width * d.bounding_box.height
+            )
+            bb = det.bounding_box
+            x, y, w, h = bb.origin_x, bb.origin_y, bb.width, bb.height
+
+            x = max(0, x)
+            y = max(0, y)
+            x2 = min(bgr.shape[1], x + w)
+            y2 = min(bgr.shape[0], y + h)
+
+            face_roi = bgr[y:y2, x:x2].copy()
+            if face_roi.size != 0:
+                roi = face_roi  # ellers falder vi tilbage til hele billedet
+
+        debug_img = self._pixelation_debug_from_bgr(roi)
+
+        # Gem fil
+        OUT_FILE_NAME = (
+            self.create_out_name(self.IMAGE_FILE_NAME)
+            + "_pixelation_debug"
+            + self.create_out_ext(self.IMAGE_FILE_NAME)
+        )
+        OUT_FILE = os.path.join(self.OUT_DIR, OUT_FILE_NAME)
+        cv2.imwrite(OUT_FILE, debug_img)
+        print(f"Pixelation debug image written to {OUT_FILE}")
+
+        return debug_img
+
+    def annotate_eyes_visible(
+            self,
+            image_bytes,
+            landmark_result,
+            ear_threshold: float = 0.2,
+    ) -> np.ndarray:
+        """
+        Visualiserer EAR (Eye Aspect Ratio) med:
+          - de 6 punkter pr. øje, der bruges til EAR
+          - linjer p1–p4 (horisontal), p2–p6 og p3–p5 (vertikale)
+          - tekstpanel med EAR-værdier og status
+        """
+        if not landmark_result.face_landmarks or len(landmark_result.face_landmarks) == 0:
+            raise ValueError("No landmarks found for eyes visualization.")
+
+        # Filnavn + mappe
+        OUT_FILE_NAME = (
+                self.create_out_name(self.IMAGE_FILE_NAME)
+                + "_annotate_eyes_visible"
+                + self.create_out_ext(self.IMAGE_FILE_NAME)
+        )
+        OUT_FILE = os.path.join(self.OUT_DIR, OUT_FILE_NAME)
+        os.makedirs(self.OUT_DIR, exist_ok=True)
+
+        # Dekod billede
+        image_rgb = image_io.bytes_to_rgb_np(image_bytes)
+        annot = image_rgb.copy()
+        H, W = annot.shape[:2]
+
+        landmarks = landmark_result.face_landmarks[0]
+
+        LEFT_EYE_LANDMARKS = [362, 385, 387, 263, 373, 380]
+        RIGHT_EYE_LANDMARKS = [33, 160, 158, 133, 153, 144]
+
+        def ear_for_indices(indices: list[int]) -> float:
+            pts = [landmarks[i] for i in indices]
+
+            def dist(a, b):
+                dx, dy = (a.x - b.x), (a.y - b.y)
+                return math.hypot(dx, dy)
+
+            p2_p6 = dist(pts[1], pts[5])
+            p3_p5 = dist(pts[2], pts[4])
+            p1_p4 = dist(pts[0], pts[3])
+            return (p2_p6 + p3_p5) / (2.0 * p1_p4) if p1_p4 > 0 else 0.0
+
+        left_ear = ear_for_indices(LEFT_EYE_LANDMARKS)
+        right_ear = ear_for_indices(RIGHT_EYE_LANDMARKS)
+        avg_ear = (left_ear + right_ear) / 2.0
+
+        eyes_visible = avg_ear > ear_threshold
+        main_color = (0, 255, 0) if eyes_visible else (0, 0, 255)  # grøn/rød
+
+        def lm_to_px(idx_list: list[int]) -> list[tuple[int, int]]:
+            pts = []
+            for idx in idx_list:
+                lm = landmarks[idx]
+                x = int(lm.x * W)
+                y = int(lm.y * H)
+                pts.append((x, y))
+            return pts
+
+        def draw_eye_points(indices: list[int], ear: float):
+            pts = lm_to_px(indices)
+            # p1..p6
+            p1, p2, p3, p4, p5, p6 = pts
+
+            # Horisontal linje p1–p4 (gul)
+            cv2.line(annot, p1, p4, (0, 255, 255), 2)
+            # Vertikale linjer p2–p6 og p3–p5 (blå)
+            cv2.line(annot, p2, p6, (255, 0, 0), 2)
+            cv2.line(annot, p3, p5, (255, 0, 0), 2)
+
+            # Tegn selve punkterne (små cirkler)
+            for (x, y) in pts:
+                cv2.circle(annot, (x, y), 4, main_color, -1)
+
+        # Tegn venstre og højre øje
+        draw_eye_points(LEFT_EYE_LANDMARKS, left_ear)
+        draw_eye_points(RIGHT_EYE_LANDMARKS, right_ear)
+
+        # Info-panel oppe i hjørnet
+        panel_w, panel_h = 430, 70
+        x0, y0 = 10, 10
+        x1, y1 = x0 + panel_w, y0 + panel_h
+
+        overlay = annot.copy()
+        cv2.rectangle(overlay, (x0, y0), (x1, y1), main_color, -1)
+        alpha = 0.25
+        annot = cv2.addWeighted(overlay, alpha, annot, 1 - alpha, 0)
+
+        status_text = "Eyes visible" if eyes_visible else "Eyes closed / not visible"
+        txt_color = (255, 255, 255)
+
+        text1 = f"EAR L: {left_ear:.3f}   R: {right_ear:.3f}"
+        text2 = f"Avg: {avg_ear:.3f}   Threshold: {ear_threshold:.3f}"
+        text3 = f"Status: {status_text}"
+
+        cv2.putText(annot, text1, (x0 + 10, y0 + 22),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, txt_color, 2, cv2.LINE_AA)
+        cv2.putText(annot, text2, (x0 + 10, y0 + 42),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, txt_color, 2, cv2.LINE_AA)
+        cv2.putText(annot, text3, (x0 + 10, y0 + 62),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, txt_color, 2, cv2.LINE_AA)
+
+        cv2.imwrite(OUT_FILE, cv2.cvtColor(annot, cv2.COLOR_RGB2BGR))
+        print(f"Annotated image written to {OUT_FILE}")
+
+        return annot

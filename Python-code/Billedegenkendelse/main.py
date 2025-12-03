@@ -13,7 +13,7 @@ from logic.logic_controller import LogicController
 
 
 # Syntaxen er from package.file import class/function.
-from logic.is_face_present.face_detector import DetectionVisualizer
+from logic.face_present_logic.face_detector import DetectionVisualizer
 
 
 # Denne funktion opretter en mappe, hvis den ikke findes
@@ -36,7 +36,13 @@ if __name__ == '__main__':
     #IMAGE_FILE_NAME = "open_mouth.jpg"
     #IMAGE_FILE_NAME = "MatiasNice.jpg"
     #IMAGE_FILE_NAME = "oscarimg.jpg"
+    #IMAGE_FILE_NAME = "blackman.png"
+    #IMAGE_FILE_NAME = "pixelWoman.png"
+    #IMAGE_FILE_NAME = "manshouldfaileyes.jpg"
     IMAGE_FILE_NAME = "man_with_shadow.png"
+
+   #IMAGE_FILE_NAME = "man_with_shadow.png"
+
 
     IMAGE_FILE = os.path.join("images", IMAGE_FILE_NAME)
 

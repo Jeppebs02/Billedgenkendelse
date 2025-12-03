@@ -1,16 +1,11 @@
-from typing import Tuple, Union, Optional, List
+from typing import Tuple, Optional, List
 import math
-import cv2
-import numpy as np
 import os
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-from mediapipe import solutions
-from mediapipe.framework.formats import landmark_pb2
-import matplotlib.pyplot as plt
 
-from logic.types import CheckResult, Requirement, Severity
+from utils.types import CheckResult, Requirement, Severity
 from utils.image_io import bytes_to_rgb_np
 
 
@@ -62,6 +57,7 @@ class DetectionVisualizer:
     def _mean(self, xs):
         '''Returns the average of numbers in an interable'''
         return sum(xs) / max(1, len(xs))
+    
     # Eye Logic
     def _calculate_ear(self, eye_landmarks: List) -> float:
         """
@@ -75,7 +71,7 @@ class DetectionVisualizer:
         p1_p4 = self._dist(eye_landmarks[0], eye_landmarks[3])
 
         # EAR calculation
-        ear = (p2_p6 + p3_p5) / (2.0 * p1_p4)
+        ear = (p2_p6 + p3_p5) / (1.5 * p1_p4)
         return ear
 
     # Detection functions
@@ -338,7 +334,7 @@ class DetectionVisualizer:
         right_ear = self._calculate_ear(right_eye)
 
         # Average EAR for both eyes
-        avg_ear = (left_ear + right_ear) / 2.0
+        avg_ear = (left_ear + right_ear) / 2
 
         # The EAR is typically around 0.25-0.3 for open eyes and drops towards 0 for closed eyes.
         eyes_visible = avg_ear > ear_threshold
