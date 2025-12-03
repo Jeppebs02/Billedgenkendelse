@@ -1,4 +1,4 @@
-path: C:\Users\mitde\Documents\GitHub\Billedgenkendelse\Python-code\Billedegenkendelse\data
+path: C:\Users\oscar\OneDrive\Dokumenter\GitHub\Billedgenkendelse\Python-code\Billedegenkendelse\data
 train: train/images
 val: validation/images
 nc: 2
