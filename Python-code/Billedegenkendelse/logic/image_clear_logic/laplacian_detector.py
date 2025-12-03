@@ -14,7 +14,7 @@ class LaplacienDetector(picture_modefication):
 
     def __init__(
         self,
-        face_threshold: float = 50.0,
+        face_threshold: float = 25.0,
         min_face_pixels: int = 800,
     ):
         self.face_threshold = float(face_threshold)
