@@ -86,15 +86,15 @@ if __name__ == "__main__":
     print(f"Project root: {project_root}")
 
     # 1) Prepare data (unzips & splits)
-    #prepare_data(project_root)
+    prepare_data(project_root)
 
     # 2) Create data.yaml (requires classes.txt)
-    #data_yaml = create_data_yaml(project_root)
-    #if not data_yaml:
-        #raise SystemExit(1)
+    data_yaml = create_data_yaml(project_root)
+    if not data_yaml:
+        raise SystemExit(1)
 
     # 3) Train — point YOLO to the absolute path of data.yaml
-   #train_model(project_root)
+    train_model(project_root)
 
     test_model(project_root)
 
