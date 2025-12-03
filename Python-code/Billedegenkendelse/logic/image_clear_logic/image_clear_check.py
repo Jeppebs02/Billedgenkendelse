@@ -11,7 +11,7 @@ class ImageClearCheck(picture_modefication):
     High-level checker der bruger:
       - LaplacienDetector (ansigtsskarphed)
       - TenengradDetector (ansigtsskarphed)
-      - BackgroundDetector (baggrundsimplicitet)
+      - BackgroundDetector (baggrundsimplicitet) (commentede ud)
     og returnerer ét samlet CheckResult for IMAGE_CLEAR.
     """
 
@@ -19,24 +19,24 @@ class ImageClearCheck(picture_modefication):
         self,
         laplacian_detector: LaplacienDetector | None = None,
         tenengrad_detector: TenengradDetector | None = None,
-        background_detector: BackgroundDetector | None = None,
+        #background_detector: BackgroundDetector | None = None,
     ):
         # Hvis der ikke gives instanser udefra, laver vi bare nye
         self.laplacian_detector = laplacian_detector or LaplacienDetector()
         self.tenengrad_detector = tenengrad_detector or TenengradDetector()
-        self.background_detector = background_detector or BackgroundDetector()
+        #self.background_detector = background_detector or BackgroundDetector()
 
     def analyze_bytes(self, image_bytes: bytes, landmarker_result=None) -> CheckResult:
         lap_res = self.laplacian_detector.analyze_bytes(image_bytes, landmarker_result)
         ten_res = self.tenengrad_detector.analyze_bytes(image_bytes, landmarker_result)
-        bg_res = self.background_detector.analyze_bytes(image_bytes, landmarker_result)
+        #bg_res = self.background_detector.analyze_bytes(image_bytes, landmarker_result)
 
-        passed = bool(lap_res.passed and ten_res.passed and bg_res.passed)
+        passed = bool(lap_res.passed and ten_res.passed)
 
         if passed:
             message = (
                 "Image is clear: face is sharp (Laplacian + Tenengrad) "
-                "and background is simple/uniform."
+                #"and background is simple/uniform."
             )
         else:
             failed_parts = []
@@ -44,8 +44,8 @@ class ImageClearCheck(picture_modefication):
                 failed_parts.append("Laplacian sharpness check failed")
             if not ten_res.passed:
                 failed_parts.append("Tenengrad sharpness check failed")
-            if not bg_res.passed:
-                failed_parts.append("Background check failed")
+            #if not bg_res.passed:
+                #failed_parts.append("Background check failed")
 
             message = (
                 "Image did not meet all requirements: "
@@ -56,7 +56,7 @@ class ImageClearCheck(picture_modefication):
         details = {
             "laplacian": lap_res.details,
             "tenengrad": ten_res.details,
-            "background": bg_res.details,
+            #"background": bg_res.details,
         }
 
         return CheckResult(
