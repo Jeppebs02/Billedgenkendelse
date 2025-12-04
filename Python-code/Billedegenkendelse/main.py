@@ -30,7 +30,7 @@ if __name__ == '__main__':
     #IMAGE_FILE_NAME = "1708197244569.jpg"
     #IMAGE_FILE_NAME = "ikke_centreret.png"
     #IMAGE_FILE_NAME = "centreret.png"
-    #IMAGE_FILE_NAME = "closedeyes.jpg"
+    IMAGE_FILE_NAME = "closedeyes.jpg"
     #IMAGE_FILE_NAME = "to_close.png"
     #IMAGE_FILE_NAME = "man_with_hat.jpg"
     #IMAGE_FILE_NAME = "open_mouth.jpg"
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     #IMAGE_FILE_NAME = "blackman.png"
     #IMAGE_FILE_NAME = "pixelWoman.png"
     #IMAGE_FILE_NAME = "manshouldfaileyes.jpg"
-    IMAGE_FILE_NAME = "man_with_shadow.png"
+    #IMAGE_FILE_NAME = "man_with_shadow.png"
 
    #IMAGE_FILE_NAME = "man_with_shadow.png"
 
