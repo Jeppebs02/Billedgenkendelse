@@ -552,13 +552,12 @@ class VisualizerHelper:
         overlay = np.zeros_like(output_image, dtype=np.uint8)
 
         # Farve mørke områder (Blå)
-        overlay[dark_mask == 1] = [255, 100, 0]
+        overlay[dark_mask == 1] = [255, 0, 0]
 
         # Farve lyse områder (Rød)
-        overlay[light_mask == 1] = [0, 100, 255]
+        overlay[light_mask == 1] = [0, 0, 255]
 
-        # Blend overlejringen
-        output_image = cv2.addWeighted(output_image, 1, overlay, 0.2, 0)
+        output_image = cv2.addWeighted(output_image, 0.8, overlay, 0.4, 0)
 
         # Marker P50 midterlinjen
         x_mid = details.get('x_mid', w // 2)
