@@ -350,11 +350,11 @@ class VisualizerHelper:
             pitch_tolerance: float,
     ) -> np.ndarray:
         """
-        Visualisering af om personen kigger mod kameraet:
-          - Blå linjer: øre-til-øre og hage-til-pande (faktisk hoved-akse)
-          - Blå pil: yaw-retningen
-          - Yaw-bar under hovedet, der viser hvor langt man er fra grænsen
-          - Info-boks med yaw/pitch + status (OK / Not straight)
+        Visualisering af om personen kigger mod kameraet – brugervenlig version:
+
+        - Grøn/rød farve: tydelig OK / ikke OK
+        - Simpel tekst: "Drej hovedet lidt mod venstre", "Løft hagen lidt" osv.
+        - Lille teknisk linje med yaw/pitch for dem der vil nørde
         """
         if not landmark_result.face_landmarks or len(landmark_result.face_landmarks) == 0:
             raise ValueError("No landmarks found.")
@@ -391,87 +391,100 @@ class VisualizerHelper:
         chin_px = to_px(landmarks[CHIN])
         forehead_px = to_px(landmarks[FOREHEAD])
 
-        # Er vi indenfor tolerance?
+        # 3) Vurder om vi er indenfor tolerance
         inside_tolerance = (
-                abs(yaw) <= yaw_tolerance and
-                abs(pitch) <= pitch_tolerance
+            abs(yaw) <= yaw_tolerance and
+            abs(pitch) <= pitch_tolerance
         )
-        main_color = (0, 255, 0) if inside_tolerance else (0, 0, 255)  # grøn / rød
-        aux_color = (255, 0, 0)  # blå-ish til hjælpegrafik
 
-        # 3) Akser: øre-til-øre + hage-til-pande
-        cv2.line(annot, left_ear_px, right_ear_px, main_color, 3)
-        cv2.line(annot, chin_px, forehead_px, main_color, 3)
+        # Farver
+        OK_COLOR = (0, 200, 0)       # grøn
+        BAD_COLOR = (0, 0, 220)      # rød
+        NEUTRAL_LINE = (200, 200, 200)
 
-        # Midtpunkt i hovedet (bruges til pil + bar)
+        main_color = OK_COLOR if inside_tolerance else BAD_COLOR
+
+        # 4) Tegn en diskret "hoved-ramme" (øre-til-øre + hage-til-pande)
+        cv2.line(annot, left_ear_px, right_ear_px, NEUTRAL_LINE, 2)
+        cv2.line(annot, chin_px, forehead_px, NEUTRAL_LINE, 2)
+
+        # Midtpunkt i hovedet (bruges til pil)
         mid_x = (left_ear_px[0] + right_ear_px[0]) // 2
         mid_y = (left_ear_px[1] + right_ear_px[1]) // 2
 
-        # 4) Pil der viser yaw-retningen
-        arrow_len = int(0.18 * W)
-        angle_rad = math.radians(yaw)
-        end_x = int(mid_x + arrow_len * math.cos(angle_rad))
-        end_y = int(mid_y - arrow_len * math.sin(angle_rad))
-        cv2.arrowedLine(
-            annot,
-            (mid_x, mid_y),
-            (end_x, end_y),
-            main_color,
-            3,
-            tipLength=0.25
-        )
+        # 5) Pil der viser yaw-retningen (kun hvis vi er udenfor tolerance)
+        if not inside_tolerance and abs(yaw) > 1.0:
+            arrow_len = int(0.18 * W)
+            angle_rad = math.radians(yaw)
+            end_x = int(mid_x + arrow_len * math.cos(angle_rad))
+            end_y = int(mid_y - arrow_len * math.sin(angle_rad))
+            cv2.arrowedLine(
+                annot,
+                (mid_x, mid_y),
+                (end_x, end_y),
+                main_color,
+                3,
+                tipLength=0.25
+            )
 
-        # 5) Yaw-bar under hovedet (visuelt "meter")
-        bar_y = min(H - 40, mid_y + int(0.20 * H))
-        bar_len = int(0.30 * W)
-        bar_x1 = mid_x - bar_len
-        bar_x2 = mid_x + bar_len
-
-        # Baggrundslinje
-        cv2.line(annot, (bar_x1, bar_y), (bar_x2, bar_y), (200, 200, 200), 2)
-
-        # Marker nulpunkt i midten
-        cv2.line(annot, (mid_x, bar_y - 6), (mid_x, bar_y + 6), (180, 180, 180), 2)
-
-        # Beregn pointer-position ift. tolerance (clamp, så den ikke løber ud af billedet)
-        if yaw_tolerance > 0:
-            norm = max(-2.0, min(2.0, yaw / yaw_tolerance))  # -2..2
-        else:
-            norm = 0.0
-        pointer_x = int(mid_x + norm * bar_len)
-        cv2.circle(annot, (pointer_x, bar_y), 7, main_color, -1)
-
-        # Tegn toleranceområde som lysere segment (± yaw_tolerance)
-        if yaw_tolerance > 0:
-            tol_norm = min(1.0, yaw_tolerance / yaw_tolerance)  # = 1.0, men bevarer logikken
-            tol_x1 = int(mid_x - tol_norm * bar_len)
-            tol_x2 = int(mid_x + tol_norm * bar_len)
-            cv2.line(annot, (tol_x1, bar_y), (tol_x2, bar_y), aux_color, 4)
-
-        # 6) Semi-transparent infoboks med tekst
-        panel_w, panel_h = 420, 80
-        x0, y0 = 10, 10
-        x1, y1 = x0 + panel_w, y0 + panel_h
+        # 6) Stor status-bjælke i bunden (brugervenlig tekst)
+        panel_h = 110
+        x0, y0 = 0, H - panel_h
+        x1, y1 = W, H
 
         overlay = annot.copy()
         cv2.rectangle(overlay, (x0, y0), (x1, y1), main_color, -1)
-        alpha = 0.25
+        alpha = 0.35
         annot = cv2.addWeighted(overlay, alpha, annot, 1 - alpha, 0)
 
-        status_text = "OK" if inside_tolerance else "Not straight"
-        text1 = f"Yaw: {yaw:.1f}°  (±{yaw_tolerance}°)"
-        text2 = f"Pitch: {pitch:.1f}°  (±{pitch_tolerance}°)"
-        text3 = f"Status: {status_text}"
+        # 7) Tekster til brugeren (dansk, ikke-teknisk)
+        if inside_tolerance:
+            status_text = "Hovedstilling: OK"
+            instruction_text = "Perfekt! Du kigger lige ind i kameraet."
+        else:
+            status_text = "Hovedstilling: Justér"
 
+            # Vælg den vigtigste fejl: yaw først, ellers pitch
+            if abs(yaw) > yaw_tolerance:
+                if yaw > 0:
+                    instruction_text = "Drej hovedet en smule mod venstre."
+                else:
+                    instruction_text = "Drej hovedet en smule mod højre."
+            elif abs(pitch) > pitch_tolerance:
+                if pitch > 0:
+                    instruction_text = "Sænk hagen en smule."
+                else:
+                    instruction_text = "Løft hagen en smule."
+            else:
+                instruction_text = "Justér hovedet en smule, så du kigger mere lige på."
+
+        # Lille linje med nørde-info (yaw/pitch)
+        tech_text = f"Drejning (sidelæns): {yaw:.1f}°  •  Nik (op/ned): {pitch:.1f}°"
+
+        # 8) Skriv teksterne i panelet
         txt_color = (255, 255, 255)
-        cv2.putText(annot, text1, (x0 + 10, y0 + 25),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, txt_color, 2, cv2.LINE_AA)
-        cv2.putText(annot, text2, (x0 + 10, y0 + 48),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, txt_color, 2, cv2.LINE_AA)
-        cv2.putText(annot, text3, (x0 + 10, y0 + 71),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, txt_color, 2, cv2.LINE_AA)
+        margin_x = 20
+        line1_y = y0 + 35
+        line2_y = y0 + 65
+        line3_y = y0 + 95
 
-        # 7) Gem resultatet
+        cv2.putText(
+            annot, status_text,
+            (margin_x, line1_y),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.9, txt_color, 2, cv2.LINE_AA
+        )
+        cv2.putText(
+            annot, instruction_text,
+            (margin_x, line2_y),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.7, txt_color, 2, cv2.LINE_AA
+        )
+        cv2.putText(
+            annot, tech_text,
+            (margin_x, line3_y),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.6, txt_color, 1, cv2.LINE_AA
+        )
+
+        # 9) Gem resultatet
         cv2.imwrite(OUT_FILE, cv2.cvtColor(annot, cv2.COLOR_RGB2BGR))
         print(f"Annotated image written to {OUT_FILE}")
 
