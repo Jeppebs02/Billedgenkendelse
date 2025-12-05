@@ -1,13 +1,14 @@
 from utils.visualizer import VisualizerHelper
+from utils.types import AnalysisReport, Requirement
+
 from .glare_sunglasses_logic.glare_sunglasses_check import GlassesLogic
 from .head_placement_logic.head_centering_check import HeadCenteringValidator
 from .face_present_logic.face_detector import DetectionVisualizer
 from .hat_glasses_logic.hat_glasses_detector import HatGlassesDetector
 from .exposure_logic.exposure_check import exposure_check
-from .image_clear_logic.laplacian_check import PixelationDetector
-from utils.types import AnalysisReport, Requirement
-from logic.face_direction_logic.face_looking_at_camera_check import FaceLookingAtCamera
-from logic.pixelation_logic.pixelation_check import PixelationCheck
+from .image_clear_logic.image_clear_check import ImageClearCheck
+from .face_direction_logic.face_looking_at_camera_check import FaceLookingAtCamera
+from .pixelation_logic.pixelation_check import PixelationCheck
 
 
 class LogicController:
@@ -16,11 +17,12 @@ class LogicController:
         self.hat_glasses_detector = HatGlassesDetector()
         self.glasses_logic = GlassesLogic()
         self.exposure_check = exposure_check()
-        # Here we can set a float which is the threshold for pixelation detection
-        self.pixelation_detector = PixelationDetector()
+        self.image_clear_check = ImageClearCheck()
         self.face_looking_at_camera = FaceLookingAtCamera()
         self.head_centering_validator = HeadCenteringValidator()
         self.visualizer_helper = None
+
+        # Ekstra pixelation-check (blockiness osv.)
         self.pixelation_check = PixelationCheck()
 
     # Utility functions
@@ -31,7 +33,7 @@ class LogicController:
                 return c
         return None
 
-    def run_analysis(self,image_path: str, image_name, threshold: float = 0.5) -> AnalysisReport:
+    def run_analysis(self, image_path: str, image_name, threshold: float = 0.5) -> AnalysisReport:
         with open(image_path, "rb") as f:
             image_bytes = f.read()
 
@@ -58,7 +60,12 @@ class LogicController:
         checks.append(self.face_detector.mouth_closed_check(face_landmarker_result))
 
         # 6) No hat and no glasses
-        checks.extend(self.hat_glasses_detector.check_hats_and_glasses_bytes(image_bytes, threshold=threshold))
+        checks.extend(
+            self.hat_glasses_detector.check_hats_and_glasses_bytes(
+                image_bytes,
+                threshold=threshold
+            )
+        )
 
         no_glasses_check = self.find_check(checks, Requirement.NO_GLASSES)
 
@@ -75,25 +82,63 @@ class LogicController:
                     face_landmarker_result=face_landmarker_result
                 )
             )
-        # 8) image clear check
-        #checks.append(self.pixelation_detector.analyze_bytes(image_bytes, face_landmarker_result))
-        checks.append(self.pixelation_check.check_pixelation_bytes(image_bytes, requirement=Requirement.PIXELATION))
+
+        # 8) image clear check (new collective check: face sharpness + background)
+        checks.append(
+            self.image_clear_check.analyze_bytes(
+            image_bytes=image_bytes,
+            landmarker_result=face_landmarker_result,
+            )
+        )
+
+        # 8.5) pixelation check (separat requirement, f.eks. blockiness / compression)
+        #checks.append(
+            #self.pixelation_check.check_pixelation_bytes(
+                #image_bytes,
+                #requirement=Requirement.PIXELATION
+            #)
+        #)
 
         # 9) exposure_logic / lighting check
-        exposure_check_result = self.exposure_check.analyze(image_bytes, face_landmarker_result)
+        exposure_check_result = self.exposure_check.analyze(
+            image_bytes,
+            face_landmarker_result
+        )
         checks.append(exposure_check_result)
 
         # 10) face looking straight
-        checks.append(self.face_looking_at_camera.face_detector(result=face_landmarker_result))
+        checks.append(
+            self.face_looking_at_camera.face_detector(result=face_landmarker_result)
+        )
 
         # 11) face centered
-        checks.append(self.head_centering_validator.check_from_detection_bytes(det_res=face_detector_result,
-                                                                               image_bytes=image_bytes))
+        checks.append(
+            self.head_centering_validator.check_from_detection_bytes(
+                det_res=face_detector_result,
+                image_bytes=image_bytes
+            )
+        )
 
-        self.visualizer_helper.annotate_facedetector(image_bytes, face_detector_result)
-        self.visualizer_helper.annotate_landmarks(image_bytes, face_landmarker_result)
-        self.visualizer_helper.annotate_center_and_size(image_bytes, face_detector_result, self.head_centering_validator.cfg)
-        self.visualizer_helper.annotate_looking_straight(image_bytes,face_landmarker_result, self.face_looking_at_camera.yaw_tolerance, self.face_looking_at_camera.pitch_tolerance,)
+        # --- Visualiseringer ---
+        self.visualizer_helper.annotate_facedetector(
+            image_bytes,
+            face_detector_result
+        )
+        self.visualizer_helper.annotate_landmarks(
+            image_bytes,
+            face_landmarker_result
+        )
+        self.visualizer_helper.annotate_center_and_size(
+            image_bytes,
+            face_detector_result,
+            self.head_centering_validator.cfg
+        )
+        self.visualizer_helper.annotate_looking_straight(
+            image_bytes,
+            face_landmarker_result,
+            self.face_looking_at_camera.yaw_tolerance,
+            self.face_looking_at_camera.pitch_tolerance,
+        )
         self.visualizer_helper.visualize_exposure(
             image_bytes,
             exposure_result=exposure_check_result,
@@ -101,7 +146,15 @@ class LogicController:
             detection_result=face_landmarker_result
         )
 
+
         self.visualizer_helper.visualize_pixelation(image_bytes, detection_result=face_detector_result)
+
+        # Her bruger du stadig din eksisterende pixelations-visualisering
+        self.visualizer_helper.visualize_pixelation(
+            image_bytes,
+            detection_result=face_detector_result
+        )
+
 
         self.visualizer_helper.annotate_eyes_visible(
             image_bytes=image_bytes,
@@ -143,7 +196,12 @@ class LogicController:
         checks.append(self.face_detector.mouth_closed_check(face_landmarker_result))
 
         # 6) No hat and no glasses
-        checks.extend(self.hat_glasses_detector.check_hats_and_glasses_bytes(image_bytes, threshold=threshold))
+        checks.extend(
+            self.hat_glasses_detector.check_hats_and_glasses_bytes(
+                image_bytes,
+                threshold=threshold
+            )
+        )
 
         no_glasses_check = self.find_check(checks, Requirement.NO_GLASSES)
 
@@ -152,7 +210,7 @@ class LogicController:
             det = no_glasses_check.details.get("detected", False)
 
         if det:
-        # 7) Glare and sunglasses check
+            # 7) Glare and sunglasses check
             checks.extend(
                 self.glasses_logic.run_all(
                     image_bytes=image_bytes,
@@ -160,20 +218,40 @@ class LogicController:
                     face_landmarker_result=face_landmarker_result
                 )
             )
-        # 8) image clear check
-        checks.append(self.pixelation_detector.analyze_bytes(image_bytes, face_landmarker_result))
 
-        #8.5) pixelation check
-        checks.append(self.pixelation_check.check_pixelation_bytes(image_bytes, requirement=Requirement.PIXELATION))
+        # 8) image clear check (Laplacian + Tenengrad + Background)
+        checks.append(
+            self.image_clear_check.analyze_bytes(
+            image_bytes=image_bytes,
+            landmarker_result=face_landmarker_result,
+            )
+        )
+
+        # 8.5) pixelation check (separat krav)
+        #checks.append(
+            #self.pixelation_check.check_pixelation_bytes(
+                #image_bytes,
+                #requirement=Requirement.PIXELATION
+            #)
+        #)
 
         # 9) exposure_logic / lighting check
-        checks.append(self.exposure_check.analyze(image_bytes, face_landmarker_result))
+        checks.append(
+            self.exposure_check.analyze(image_bytes, face_landmarker_result)
+        )
 
         # 10) face looking straight
-        checks.append(self.face_looking_at_camera.face_detector(result=face_landmarker_result))
+        checks.append(
+            self.face_looking_at_camera.face_detector(result=face_landmarker_result)
+        )
 
         # 11) face centered
-        checks.append(self.head_centering_validator.check_from_detection_bytes(det_res=face_detector_result, image_bytes=image_bytes))
+        checks.append(
+            self.head_centering_validator.check_from_detection_bytes(
+                det_res=face_detector_result,
+                image_bytes=image_bytes
+            )
+        )
 
         overall_pass = all(c.passed for c in checks)
         return AnalysisReport(

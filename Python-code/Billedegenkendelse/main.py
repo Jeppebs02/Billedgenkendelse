@@ -37,7 +37,10 @@ if __name__ == '__main__':
     #IMAGE_FILE_NAME = "MatiasNice.jpg"
     #IMAGE_FILE_NAME = "oscarimg.jpg"
     #IMAGE_FILE_NAME = "expoMan.png"
+    #IMAGE_FILE_NAME = "blackman.png"
+    #IMAGE_FILE_NAME = "pixelWoman.png"
     #IMAGE_FILE_NAME = "manshouldfaileyes.jpg"
+    #IMAGE_FILE_NAME = "man_with_shadow.png"
 
     IMAGE_FILE_NAME = "man_with_shadow.png"
 
