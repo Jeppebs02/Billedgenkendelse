@@ -60,8 +60,9 @@ def _check_file_name(file):
 
 
 @app.route("/")
-def hello_world():
-    return "<p>OK Updated</p>"
+def health_endpoint():
+    version = os.environ.get("APP_VERSION", "unknown")
+    return f"<p>OK {version}</p>"
 
 
 @app.route("/analyze", methods=['POST'])
