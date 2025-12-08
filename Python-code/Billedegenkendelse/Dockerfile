@@ -1,9 +1,12 @@
 FROM python:3.11-slim
 
+ARG APP_VERSION=unknown
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    ULTRALYTICS_SETTINGS_DIR=/app/.ultralytics
+    ULTRALYTICS_SETTINGS_DIR=/app/.ultralytics \
+	APP_VERSION=$APP_VERSION
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 libglib2.0-0 \
