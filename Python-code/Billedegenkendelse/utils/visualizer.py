@@ -962,34 +962,29 @@ class VisualizerHelper:
 
         return combined
 
-    def visualize_mouth(self,
-                        image_bytes: bytes,
-                        landmarks_result,
-                        IMAGE_FILE_NAME: str,
-                        circle_color=(0, 255, 0),
-                        line_color=(0, 0, 255),
-                        thickness=2):
+    def visualize_mouth(
+            self,
+            image_bytes: bytes,
+            landmarks_result,
+            circle_color=(0, 255, 0),
+            line_color=(0, 0, 255),
+            thickness=2
+    ):
         """
-        Saves a visualization of the mouth landmarks used in mouth_closed_check().
-        Output file goes to OUT/<image_name>/<image_name>_mouth.jpg
+        Gemmer en visualisering af mund-landmarks (mouth_closed_check).
+        Output gemmes i samme stil som de andre visualiseringer.
         """
-
-        # -------------------------
-        # 1. Decode image bytes
-        # -------------------------
+        # Decode image
         rgb = image_io.bytes_to_rgb_np(image_bytes)
         bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
         overlay = bgr.copy()
 
-        # -------------------------
-        # 2. Extract landmarks
-        # -------------------------
         if not landmarks_result.face_landmarks:
-            raise ValueError("No landmarks available for mouth visualization.")
+            raise ValueError("Ingen landmarks tilgængelige for mund-visualisering.")
 
         lm = landmarks_result.face_landmarks[0]
 
-        # Landmarks used in mouth_closed_check()
+        # Landmarks fra mouth_closed_check
         idx_upper_inner = 13
         idx_lower_inner = 14
         idx_left_outer = 61
@@ -997,50 +992,35 @@ class VisualizerHelper:
         idx_left_inner = 78
         idx_right_inner = 308
 
-        pts_idx = [
-            idx_upper_inner, idx_lower_inner,
-            idx_left_outer, idx_right_outer,
-            idx_left_inner, idx_right_inner
-        ]
+        pts_idx = [idx_upper_inner, idx_lower_inner, idx_left_outer, idx_right_outer, idx_left_inner, idx_right_inner]
         pts = [(lm[i].x, lm[i].y) for i in pts_idx]
 
-        # Convert normalized → pixel coords
+        # Normaliseret → pixel
         h, w = overlay.shape[:2]
         pts_px = [(int(x * w), int(y * h)) for x, y in pts]
-
-        # Unpack points
         p_upper, p_lower, p_l_out, p_r_out, p_l_in, p_r_in = pts_px
 
-        # -------------------------
-        # 3. Draw points
-        # -------------------------
+        # Tegn punkter
         for px, py in pts_px:
             cv2.circle(overlay, (px, py), 3, circle_color, -1)
 
-        # -------------------------
-        # 4. Draw lines
-        # -------------------------
-        # Vertical gap line
+        # Tegn linjer
         cv2.line(overlay, p_upper, p_lower, line_color, thickness)
-
-        # Outer mouth width
         cv2.line(overlay, p_l_out, p_r_out, (255, 0, 0), thickness)
-
-        # Inner mouth width
         cv2.line(overlay, p_l_in, p_r_in, (0, 255, 255), thickness)
 
-        # -------------------------
-        # 5. Save file (same style as class)
-        # -------------------------
-        name_no_ext, ext = os.path.splitext(IMAGE_FILE_NAME)
+        # Gem fil i samme stil som de andre visualiseringer
+        name_no_ext, ext = os.path.splitext(self.IMAGE_FILE_NAME)
         out_dir = os.path.join(self.OUT_DIR, name_no_ext)
         os.makedirs(out_dir, exist_ok=True)
 
         out_path = os.path.join(out_dir, f"{name_no_ext}_mouth.jpg")
-
         cv2.imwrite(out_path, overlay)
 
+        print(f"Mouth visualizer image written to {out_path}")
         return out_path
+
+
 
 
 

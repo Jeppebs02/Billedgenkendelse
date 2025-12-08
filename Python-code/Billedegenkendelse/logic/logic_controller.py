@@ -145,6 +145,11 @@ class LogicController:
             checker_instance=self.exposure_check,
             detection_result=face_landmarker_result
         )
+        self.visualizer_helper.visualize_mouth(
+            image_bytes,
+            face_landmarker_result,
+        )
+
 
 
         self.visualizer_helper.visualize_pixelation(image_bytes, detection_result=face_detector_result)
