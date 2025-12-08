@@ -796,3 +796,167 @@ class VisualizerHelper:
         print(f"Annotated image written to {OUT_FILE}")
 
         return annot
+
+    def visualize_sharpness(
+            self,
+            image_bytes: bytes,
+            sharpness_result: CheckResult,
+    ) -> np.ndarray:
+        """
+        Visualiserer skarphed med både Tenengrad og Laplacian:
+
+        - Venstre panel: Tenengrad (Sobel-gradient magnitude)
+        - Højre panel: Laplacian-variance
+        - Fælles infopanel i bunden med begge metoders værdier
+
+        Forventer et IMAGE_CLEAR-resultat med:
+            details = {
+              "laplacian": {...},
+              "tenengrad": {...}
+            }
+        """
+        OUT_FILE_NAME = (
+            self.create_out_name(self.IMAGE_FILE_NAME)
+            + "_visualize_sharpness"
+            + self.create_out_ext(self.IMAGE_FILE_NAME)
+        )
+        OUT_FILE = os.path.join(self.OUT_DIR, OUT_FILE_NAME)
+        os.makedirs(self.OUT_DIR, exist_ok=True)
+
+        # --- 1) Decode billede ---
+        arr = np.frombuffer(image_bytes, np.uint8)
+        bgr = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+        if bgr is None:
+            raise ValueError("Could not decode image from bytes in visualize_sharpness")
+
+        gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+        H, W = gray.shape[:2]
+
+        # --- 2) Tenengrad heatmap (Sobel magnitude) ---
+        gx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
+        gy = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
+        g2 = gx * gx + gy * gy
+        mag = np.sqrt(g2)
+
+        max_mag = mag.max()
+        if max_mag <= 0:
+            mag_norm = np.zeros_like(gray, dtype=np.uint8)
+        else:
+            mag_norm = (mag / max_mag * 255).astype(np.uint8)
+
+        ten_heatmap = cv2.applyColorMap(mag_norm, cv2.COLORMAP_JET)
+        ten_blend = cv2.addWeighted(bgr, 0.5, ten_heatmap, 0.5, 0)
+
+        # --- 3) Laplacian heatmap ---
+        lap = cv2.Laplacian(gray, cv2.CV_64F)
+        lap_abs = np.abs(lap)
+
+        max_lap = lap_abs.max()
+        if max_lap <= 0:
+            lap_norm = np.zeros_like(gray, dtype=np.uint8)
+        else:
+            lap_norm = (lap_abs / max_lap * 255).astype(np.uint8)
+
+        lap_heatmap = cv2.applyColorMap(lap_norm, cv2.COLORMAP_JET)
+        lap_blend = cv2.addWeighted(bgr, 0.5, lap_heatmap, 0.5, 0)
+
+        # Label øverst på hver panel
+        cv2.putText(
+            ten_blend, "Tenengrad", (10, 30),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2, cv2.LINE_AA
+        )
+        cv2.putText(
+            lap_blend, "Laplacian", (10, 30),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2, cv2.LINE_AA
+        )
+
+        # --- 4) Saml panelerne side om side ---
+        combined = cv2.hconcat([ten_blend, lap_blend])
+        Hc, Wc = combined.shape[:2]
+
+        # --- 5) Hent data fra details ---
+        details = sharpness_result.details or {}
+        lap = details.get("laplacian", {}) or {}
+        ten = details.get("tenengrad", {}) or {}
+
+        used_face_mask = bool(ten.get("used_face_mask",
+                              lap.get("used_face_mask", False)))
+        face_pixels = int(ten.get("face_pixels",
+                           lap.get("face_pixels", 0)))
+        region_text = "face region" if used_face_mask else "whole image"
+
+        # Tenengrad
+        ten_full = float(ten.get("tenengrad_full", 0.0))
+        ten_face = ten.get("tenengrad_face", None)
+        ten_thr_full = float(ten.get("full_image_threshold", 0.0))
+        ten_thr_face = float(ten.get("face_threshold", 0.0))
+
+        # Laplacian
+        lap_full = float(lap.get("variance_full", 0.0))
+        lap_face = lap.get("variance_face", None)
+        lap_thr_full = float(lap.get("full_image_threshold", 0.0))
+        lap_thr_face = float(lap.get("face_threshold", 0.0))
+
+        status_ok = bool(sharpness_result.passed)
+        status_text = "Sharpness: OK" if status_ok else "Sharpness: For lav"
+        status_color = (0, 200, 0) if status_ok else (0, 0, 220)
+
+        # --- 6) Info-panel nederst på combined ---
+        panel_h = 150
+        x0, y0 = 0, Hc - panel_h
+        x1, y1 = Wc, Hc
+
+        overlay = combined.copy()
+        cv2.rectangle(overlay, (x0, y0), (x1, y1), status_color, -1)
+        combined = cv2.addWeighted(overlay, 0.35, combined, 0.65, 0)
+
+        txt_color = (255, 255, 255)
+        margin_x = 20
+        line_y = y0 + 30
+        line_step = 25
+
+        # Linje 1: status
+        cv2.putText(
+            combined, f"{status_text} (Tenengrad + Laplacian)",
+            (margin_x, line_y),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.85, txt_color, 2, cv2.LINE_AA
+        )
+        line_y += line_step
+
+        # Linje 2: region
+        region_line = f"Region: {region_text}"
+        if used_face_mask:
+            region_line += f" (pixels: {face_pixels})"
+        cv2.putText(
+            combined, region_line,
+            (margin_x, line_y),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.7, txt_color, 2, cv2.LINE_AA
+        )
+        line_y += line_step
+
+        # Linje 3: Tenengrad værdier
+        ten_line = f"Tenengrad full: {ten_full:.1f} | Thr(full): {ten_thr_full:.1f}"
+        if ten_face is not None:
+            ten_line += f"  |  face: {ten_face:.1f}  Thr(face): {ten_thr_face:.1f}"
+        cv2.putText(
+            combined, ten_line,
+            (margin_x, line_y),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.6, txt_color, 2, cv2.LINE_AA
+        )
+        line_y += line_step
+
+        # Linje 4: Laplacian værdier
+        lap_line = f"Laplacian full: {lap_full:.1f} | Thr(full): {lap_thr_full:.1f}"
+        if lap_face is not None:
+            lap_line += f"  |  face: {lap_face:.1f}  Thr(face): {lap_thr_face:.1f}"
+        cv2.putText(
+            combined, lap_line,
+            (margin_x, line_y),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.6, txt_color, 2, cv2.LINE_AA
+        )
+
+        # --- 7) Gem og returnér ---
+        cv2.imwrite(OUT_FILE, combined)
+        print(f"Sharpness visualization written to {OUT_FILE}")
+
+        return combined
