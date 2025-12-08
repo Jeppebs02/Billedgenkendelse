@@ -47,10 +47,24 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-
-      - name: Get Version Number
+      - name: Generate Version Number
         id: vars
-        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        run: |
+          # Get the current run number (e.g., 1, 2, 3...)
+          run_num=${{ github.run_number }}
+      
+          # Calculate Major and Minor version numbers
+          # Logic: Increment Major number every 10 runs. Minor resets to 1 after 10.
+          # (run_num - 1) ensures we start at 1.1 simple math :)
+          major=$(( (run_num - 1) / 10 + 1 ))
+          minor=$(( (run_num - 1) % 10 + 1 ))
+      
+          version="${major}.${minor}"
+
+          # First echo is just for logging :)
+          echo "Generated Version: $version"
+          echo "version=$version" >> $GITHUB_OUTPUT
+
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -62,4 +76,4 @@ jobs:
             ${{ env.IMAGE_NAME }}:latest
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
           build-args: |
-            APP_VERSION=${{ steps.vars.outputs.sha_short }}
+            APP_VERSION=${{ steps.vars.outputs.version }}
