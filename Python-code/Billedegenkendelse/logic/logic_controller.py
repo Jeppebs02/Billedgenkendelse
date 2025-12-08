@@ -228,12 +228,12 @@ class LogicController:
             )
 
         # 8) image clear check (Laplacian + Tenengrad + Background)
-        checks.append(
-            self.image_clear_check.analyze_bytes(
-            image_bytes=image_bytes,
-            landmarker_result=face_landmarker_result,
-            )
-        )
+        # checks.append(
+        #     self.image_clear_check.analyze_bytes(
+        #     image_bytes=image_bytes,
+        #     landmarker_result=face_landmarker_result,
+        #     )
+        # )
 
         # 8.5) pixelation check (separat krav)
         #checks.append(
