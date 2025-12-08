@@ -1024,5 +1024,275 @@ class VisualizerHelper:
 
 
 
+    def annotate_sunglasses(
+            self,
+            image_bytes: bytes,
+            sunglasses_result: CheckResult,
+    ) -> np.ndarray:
+        """
+        Meget mere visuel tint-visualisering:
+
+          - Venstre panel: fuldt billede med blå overlay i brille-ROI
+          - Højre panel: forstørret close-up af ROI med stærk blå overlay
+          - Stor status-tekst + nøgletal i top-panel
+        """
+        details = sunglasses_result.details or {}
+        roi = details.get("roi")
+        if roi is None:
+            image_rgb = image_io.bytes_to_rgb_np(image_bytes)
+            print("annotate_sunglasses: no ROI in details")
+            return image_rgb
+
+        x1, y1, x2, y2 = int(roi["x1"]), int(roi["y1"]), int(roi["x2"]), int(roi["y2"])
+
+        OUT_FILE_NAME = (
+                self.create_out_name(self.IMAGE_FILE_NAME)
+                + "_annotate_sunglasses"
+                + self.create_out_ext(self.IMAGE_FILE_NAME)
+        )
+        OUT_FILE = os.path.join(self.OUT_DIR, OUT_FILE_NAME)
+        os.makedirs(self.OUT_DIR, exist_ok=True)
+
+        # load billede
+        image_rgb = image_io.bytes_to_rgb_np(image_bytes)
+        H, W = image_rgb.shape[:2]
+
+        # clip ROI
+        x1 = max(0, min(W - 1, x1))
+        x2 = max(0, min(W, x2))
+        y1 = max(0, min(H - 1, y1))
+        y2 = max(0, min(H, y2))
+
+        if x2 <= x1 or y2 <= y1:
+            cv2.imwrite(OUT_FILE, cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR))
+            print(f"annotate_sunglasses: empty ROI, wrote {OUT_FILE}")
+            return image_rgb
+
+        # ---------- venstre: fuldt billede med blå overlay i ROI ----------
+        full_annot = image_rgb.copy()
+        overlay_full = full_annot.copy()
+
+        main_color = (0, 200, 255) if sunglasses_result.passed else (255, 0, 0)  # blå/orange-ish
+        # fyld ROI med farve
+        cv2.rectangle(overlay_full, (x1, y1), (x2, y2), main_color, -1)
+        # bland overlay let
+        full_annot = cv2.addWeighted(overlay_full, 0.30, full_annot, 0.70, 0)
+        # kant rundt om ROI
+        cv2.rectangle(full_annot, (x1, y1), (x2, y2), main_color, 2)
+
+        # ---------- højre: zoomet ROI ----------
+        roi_rgb = image_rgb[y1:y2, x1:x2].copy()
+        zoom_factor = 2.5
+        roi_zoom = cv2.resize(
+            roi_rgb,
+            None,
+            fx=zoom_factor,
+            fy=zoom_factor,
+            interpolation=cv2.INTER_CUBIC,
+        )
+
+        # kraftigere blå overlay i zoom
+        overlay_zoom = roi_zoom.copy()
+        cv2.rectangle(
+            overlay_zoom,
+            (0, 0),
+            (overlay_zoom.shape[1], overlay_zoom.shape[0]),
+            main_color,
+            -1,
+        )
+        roi_zoom = cv2.addWeighted(overlay_zoom, 0.35, roi_zoom, 0.65, 0)
+
+        # ---------- lav fælles canvas side-om-side ----------
+        h_full, w_full = full_annot.shape[:2]
+        h_zoom, w_zoom = roi_zoom.shape[:2]
+        canvas_h = max(h_full, h_zoom + 80)  # ekstra plads til tekst under zoom
+        canvas_w = w_full + w_zoom + 20
+
+        canvas = np.zeros((canvas_h, canvas_w, 3), dtype=np.uint8)
+        canvas[:] = (10, 10, 10)  # mørk baggrund
+
+        # placer full left, zoom right
+        canvas[0:h_full, 0:w_full] = full_annot
+        canvas[0:h_zoom, w_full + 20:w_full + 20 + w_zoom] = roi_zoom
+
+        # ---------- tekstpanel øverst ----------
+        txt_color = (255, 255, 255)
+        status = "OK (no tint)" if sunglasses_result.passed else "Sunglasses / tint detected"
+
+        V_eye = details.get("median_V_eye", 0.0)
+        V_skin = details.get("median_V_skin", 0.0)
+        ratio = details.get("ratio_eye_to_skin", 0.0)
+        texture = details.get("texture_var", 0.0)
+        thr = details.get("thresholds", {})
+
+        lines = [
+            f"Tint check: {status}",
+            f"Eye V: {V_eye:.3f}   Skin V: {V_skin:.3f}   Ratio: {ratio:.3f} (thr {thr.get('tint_darkness_ratio_k', '?')})",
+            f"Texture var: {texture:.1f} (thr {thr.get('min_eye_texture', '?')})",
+        ]
+
+        y0 = 30
+        for line in lines:
+            cv2.putText(
+                canvas,
+                line,
+                (20, y0),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.55,
+                txt_color,
+                2,
+                cv2.LINE_AA,
+            )
+            y0 += 25
+
+        # label under zoom-panel
+        cv2.putText(
+            canvas,
+            "Zoom: glass/eye region",
+            (w_full + 20, min(h_zoom + 60, canvas_h - 10)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            txt_color,
+            2,
+            cv2.LINE_AA,
+        )
+
+        cv2.imwrite(OUT_FILE, cv2.cvtColor(canvas, cv2.COLOR_RGB2BGR))
+        print(f"Annotated sunglasses image written to {OUT_FILE}")
+
+        return canvas
+
+    def annotate_glare(
+            self,
+            image_bytes: bytes,
+            glare_result: CheckResult,
+    ) -> np.ndarray:
+        """
+        Mere intuitiv glare-visualisering:
+
+          - Venstre panel: fuldt billede med markeret brille-ROI
+          - Højre panel: forstørret ROI med gule glare-pixels
+          - Tekstpanel med glare-metrikker
+        """
+        details = glare_result.details or {}
+        roi = details.get("roi")
+        if roi is None:
+            image_rgb = image_io.bytes_to_rgb_np(image_bytes)
+            print("annotate_glare: no ROI in details")
+            return image_rgb
+
+        x1, y1, x2, y2 = int(roi["x1"]), int(roi["y1"]), int(roi["x2"]), int(roi["y2"])
+
+        OUT_FILE_NAME = (
+                self.create_out_name(self.IMAGE_FILE_NAME)
+                + "_annotate_glare"
+                + self.create_out_ext(self.IMAGE_FILE_NAME)
+        )
+        OUT_FILE = os.path.join(self.OUT_DIR, OUT_FILE_NAME)
+        os.makedirs(self.OUT_DIR, exist_ok=True)
+
+        image_rgb = image_io.bytes_to_rgb_np(image_bytes)
+        H, W = image_rgb.shape[:2]
+
+        x1 = max(0, min(W - 1, x1))
+        x2 = max(0, min(W, x2))
+        y1 = max(0, min(H - 1, y1))
+        y2 = max(0, min(H, y2))
+
+        if x2 <= x1 or y2 <= y1:
+            cv2.imwrite(OUT_FILE, cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR))
+            print(f"annotate_glare: empty ROI, wrote {OUT_FILE}")
+            return image_rgb
+
+        # ---------- venstre: fuldt billede med green/red ramme ----------
+        full_annot = image_rgb.copy()
+        main_color = (0, 180, 0) if glare_result.passed else (0, 0, 220)
+        cv2.rectangle(full_annot, (x1, y1), (x2, y2), main_color, 2)
+
+        # ---------- højre: zoomet ROI med gule glare-pixels ----------
+        roi_rgb = image_rgb[y1:y2, x1:x2].copy()
+        zoom_factor = 2.5
+        roi_zoom = cv2.resize(
+            roi_rgb,
+            None,
+            fx=zoom_factor,
+            fy=zoom_factor,
+            interpolation=cv2.INTER_CUBIC,
+        )
+
+        # beregn glare-mask i zoom
+        hsv = cv2.cvtColor(roi_zoom, cv2.COLOR_RGB2HSV)
+        V = hsv[:, :, 2].astype(np.float32) / 255.0
+        S = hsv[:, :, 1].astype(np.float32) / 255.0
+        bright_mask = ((V > 0.90) & (S < 0.25)).astype(np.uint8)
+
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        bright_mask = cv2.morphologyEx(bright_mask, cv2.MORPH_OPEN, kernel, iterations=1)
+
+        glare_overlay = roi_zoom.copy()
+        glare_overlay[bright_mask == 1] = (255, 255, 0)  # gul
+
+        roi_zoom_blend = cv2.addWeighted(roi_zoom, 0.7, glare_overlay, 0.3, 0)
+
+        # ---------- fælles canvas ----------
+        h_full, w_full = full_annot.shape[:2]
+        h_zoom, w_zoom = roi_zoom_blend.shape[:2]
+        canvas_h = max(h_full, h_zoom + 80)
+        canvas_w = w_full + w_zoom + 20
+
+        canvas = np.zeros((canvas_h, canvas_w, 3), dtype=np.uint8)
+        canvas[:] = (10, 10, 10)
+
+        canvas[0:h_full, 0:w_full] = full_annot
+        canvas[0:h_zoom, w_full + 20:w_full + 20 + w_zoom] = roi_zoom_blend
+
+        # ---------- tekstpanel ----------
+        txt_color = (255, 255, 255)
+        status = "OK (no problematic glare)" if glare_result.passed else "Glare detected"
+
+        area_pct = details.get("reflection_area_pct", 0.0)
+        largest_blob = details.get("largest_blob_px", 0)
+        ar = details.get("max_aspect_ratio", 0.0)
+        max_len = details.get("max_len_px", 0)
+        overlaps_iris = details.get("overlaps_iris", False)
+
+        lines = [
+            f"Glare check: {status}",
+            f"Bright area%: {area_pct:.5f}   largest_blob: {largest_blob}   AR: {ar:.2f}   len: {max_len}",
+            f"Overlaps iris: {overlaps_iris}",
+        ]
+
+        y0 = 30
+        for line in lines:
+            cv2.putText(
+                canvas,
+                line,
+                (20, y0),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.55,
+                txt_color,
+                2,
+                cv2.LINE_AA,
+            )
+            y0 += 25
+
+        cv2.putText(
+            canvas,
+            "Zoom: glare (yellow) in glass region",
+            (w_full + 20, min(h_zoom + 60, canvas_h - 10)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            txt_color,
+            2,
+            cv2.LINE_AA,
+        )
+
+        cv2.imwrite(OUT_FILE, cv2.cvtColor(canvas, cv2.COLOR_RGB2BGR))
+        print(f"Annotated glare image written to {OUT_FILE}")
+
+        return canvas
+
+
+
 
 
