@@ -969,10 +969,10 @@ class VisualizerHelper:
             circle_color=(0, 255, 0),
             line_color=(0, 0, 255),
             thickness=2
-    ):
+    ) -> np.ndarray:
         """
         Gemmer en visualisering af mund-landmarks (mouth_closed_check).
-        Output gemmes i samme stil som de andre visualiseringer.
+        Output gemmes i samme stil som de andre visualiseringer og returnerer BGR-array.
         """
         # Decode image
         rgb = image_io.bytes_to_rgb_np(image_bytes)
@@ -1009,16 +1009,18 @@ class VisualizerHelper:
         cv2.line(overlay, p_l_out, p_r_out, (255, 0, 0), thickness)
         cv2.line(overlay, p_l_in, p_r_in, (0, 255, 255), thickness)
 
-        # Gem fil i samme stil som de andre visualiseringer
+        # Gem fil som de andre metoder gør
         name_no_ext, ext = os.path.splitext(self.IMAGE_FILE_NAME)
-        out_dir = os.path.join(self.OUT_DIR, name_no_ext)
-        os.makedirs(out_dir, exist_ok=True)
+        OUT_FILE_NAME = f"{name_no_ext}_mouth{ext}"
+        OUT_FILE = os.path.join(self.OUT_DIR, OUT_FILE_NAME)
+        os.makedirs(self.OUT_DIR, exist_ok=True)
 
-        out_path = os.path.join(out_dir, f"{name_no_ext}_mouth.jpg")
-        cv2.imwrite(out_path, overlay)
+        cv2.imwrite(OUT_FILE, overlay)
+        print(f"Mouth visualizer image written to {OUT_FILE}")
 
-        print(f"Mouth visualizer image written to {out_path}")
-        return out_path
+        # Returnér selve BGR-arrayet
+        return overlay
+
 
 
 
