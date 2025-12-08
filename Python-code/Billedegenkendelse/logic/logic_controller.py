@@ -162,6 +162,14 @@ class LogicController:
             ear_threshold=0.2,  # eller hent den fra et config hvis du gør det dynamisk
         )
 
+        sharpness_result = self.image_clear_check.analyze_bytes(
+            image_bytes=image_bytes,
+            landmarker_result=face_landmarker_result
+        )
+
+        self.visualizer_helper.visualize_sharpness(
+            image_bytes=image_bytes, sharpness_result=sharpness_result)
+
 
         overall_pass = all(c.passed for c in checks)
         return AnalysisReport(
