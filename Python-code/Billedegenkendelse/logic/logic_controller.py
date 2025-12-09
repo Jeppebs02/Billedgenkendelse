@@ -145,6 +145,11 @@ class LogicController:
             checker_instance=self.exposure_check,
             detection_result=face_landmarker_result
         )
+        self.visualizer_helper.visualize_mouth(
+            image_bytes,
+            face_landmarker_result,
+        )
+
 
 
         self.visualizer_helper.visualize_pixelation(image_bytes, detection_result=face_detector_result)
@@ -170,6 +175,19 @@ class LogicController:
         self.visualizer_helper.visualize_sharpness(
             image_bytes=image_bytes, sharpness_result=sharpness_result)
 
+        sunglasses_res = self.find_check(checks, Requirement.NO_SUNGLASSES)
+        if sunglasses_res and sunglasses_res.details:
+            self.visualizer_helper.annotate_sunglasses(
+                image_bytes=image_bytes,
+                sunglasses_result=sunglasses_res,
+            )
+
+        glare_res = self.find_check(checks, Requirement.NO_GLASSES_REFLECTION)
+        if glare_res and glare_res.details:
+            self.visualizer_helper.annotate_glare(
+                image_bytes=image_bytes,
+                glare_result=glare_res,
+            )
 
         overall_pass = all(c.passed for c in checks)
         return AnalysisReport(

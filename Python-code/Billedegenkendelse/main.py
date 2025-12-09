@@ -32,7 +32,8 @@ if __name__ == '__main__':
     #IMAGE_FILE_NAME = "centreret.png"
     #IMAGE_FILE_NAME = "closedeyes.jpg"
     #IMAGE_FILE_NAME = "to_close.png"
-    IMAGE_FILE_NAME = "man_with_hat.jpg"
+    #IMAGE_FILE_NAME = "man_with_hat.jpg"
+    #IMAGE_FILE_NAME = "open_mouth.jpg"
     #IMAGE_FILE_NAME = "open_mouth.jpg"
     #IMAGE_FILE_NAME = "MatiasNice.jpg"
     #IMAGE_FILE_NAME = "oscarimg.jpg"
@@ -42,6 +43,7 @@ if __name__ == '__main__':
     #IMAGE_FILE_NAME = "manshouldfaileyes.jpg"
     #IMAGE_FILE_NAME = "ManPass.png"
     #IMAGE_FILE_NAME = "man_with_shadow.png"
+    IMAGE_FILE_NAME = "GlassesGlare.png"
 
 
     IMAGE_FILE = os.path.join("images", IMAGE_FILE_NAME)
