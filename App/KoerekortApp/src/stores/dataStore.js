@@ -26,7 +26,7 @@ export const useDataStore = defineStore('data', () => {
       })
       const text = await response.text()
       // Replace p tags
-      version.value = text.replace(/<[^>]*>/g, '').replace('OK ', '').trim()
+      version.value = text.replace(/<[^>]*>/g, '').replace('OK. App version: ', '').trim()
     } catch (error) {
       console.error('Failed to fetch version:', error)
     }
