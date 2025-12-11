@@ -61,7 +61,7 @@ async function addPhoto() {
   try {
     loading.value = true
     // DO NOT set Content-Type manually. The browser sets it for FormData.
-    const resp = await fetch('http://api.terragrouplabs.net/analyze', {
+    const resp = await fetch('https://api.terragrouplabs.net/analyze', {
       method: 'POST',
       headers: {
         'x-api-key': 'a541fe33-6c48-490c-b71a-eadab16594de'
