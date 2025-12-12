@@ -82,7 +82,7 @@ class exposure_check(picture_modefication):
             L_skin_mid = self._robust_middle_band(L_skin, 10, 90)  # strammere cut, mindre outliers
             if L_skin_mid.size >= 300:
                 L_skin_p50 = float(np.median(L_skin_mid))
-                # Evt. brug IQR til at sætte delta dynamisk
+                # brug IQR til at sætte delta dynamisk
                 q25 = float(np.percentile(L_skin_mid, 25))
                 q75 = float(np.percentile(L_skin_mid, 75))
                 iqr = max(1.0, q75 - q25)
