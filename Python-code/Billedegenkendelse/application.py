@@ -1,8 +1,10 @@
 import cv2
 import os
+import threading
 import numpy as np
 
 import mediapipe as mp
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from torchgen.gen_functionalization_type import wrap_propagate_mutations_and_return
@@ -15,6 +17,15 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 logic = LogicController()
+
+# How many analyses you want running concurrently per process
+MAX_CONCURRENT_ANALYSES = int(os.environ.get("MAX_CONCURRENT_ANALYSES", "4"))
+
+# Thread pool to run CPU/blocking work off the main request thread
+ANALYSIS_EXECUTOR = ThreadPoolExecutor(max_workers=MAX_CONCURRENT_ANALYSES)
+
+# Semaphore to avoid oversubscription (prevents thrashing under load)
+ANALYSIS_SEMAPHORE = threading.BoundedSemaphore(value=MAX_CONCURRENT_ANALYSES)
 
 # Configuration
 
@@ -99,7 +110,18 @@ def analyze_image():
             return jsonify({"error": "Empty file"}), 400
 
         # Run analysis
-        report = logic.run_analysis_bytes(image_bytes, threshold=threshold)
+        # Acquire concurrency slot (fast-fail if server is overloaded)
+        acquired = ANALYSIS_SEMAPHORE.acquire(blocking=False)
+        if not acquired:
+            return jsonify({"error": "Server busy. Try again shortly."}), 503
+
+        try:
+            future = ANALYSIS_EXECUTOR.submit(logic.run_analysis_bytes, image_bytes, threshold)
+
+            # We can optionally set a timeout to avoid requests hanging forever
+            report = future.result(timeout=float(os.environ.get("ANALYSIS_TIMEOUT_SECONDS", "60")))
+        finally:
+            ANALYSIS_SEMAPHORE.release()
 
         # Build response
         resp = {

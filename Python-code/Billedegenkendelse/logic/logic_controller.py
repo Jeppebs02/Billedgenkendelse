@@ -1,3 +1,5 @@
+import asyncio
+
 from utils.visualizer import VisualizerHelper
 from utils.types import AnalysisReport, Requirement
 
@@ -12,7 +14,9 @@ from .pixelation_logic.pixelation_check import PixelationCheck
 
 
 class LogicController:
-    def __init__(self):
+    def __init__(self, max_concurrent_analyses: int = 4):
+        self._analysis_sem = asyncio.Semaphore(max_concurrent_analyses)
+
         self.face_detector = DetectionVisualizer()
         self.hat_glasses_detector = HatGlassesDetector()
         self.glasses_logic = GlassesLogic()
@@ -245,13 +249,13 @@ class LogicController:
                 )
             )
 
-        # 8) image clear check (Laplacian + Tenengrad + Background)
-        # checks.append(
-        #     self.image_clear_check.analyze_bytes(
-        #     image_bytes=image_bytes,
-        #     landmarker_result=face_landmarker_result,
-        #     )
-        # )
+         # 8) image clear check (Laplacian + Tenengrad + Background)
+            checks.append(
+             self.image_clear_check.analyze_bytes(
+             image_bytes=image_bytes,
+             landmarker_result=face_landmarker_result,
+             )
+         )
 
         # 8.5) pixelation check (separat krav)
         #checks.append(
@@ -286,4 +290,8 @@ class LogicController:
             checks=checks
         )
 
-
+    # New: async wrapper that runs the sync method in a worker thread
+    async def run_analysis_bytes_async(self, image_bytes: bytes, threshold: float = 0.5) -> AnalysisReport:
+            async with self._analysis_sem:
+                # Offload to thread so the event loop stays free to accept other requests
+                return await asyncio.to_thread(self.run_analysis_bytes, image_bytes, threshold)
