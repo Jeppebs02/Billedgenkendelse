@@ -72,7 +72,6 @@ def analyze_image():
         if 'file' not in request.files:
             return jsonify({"error": "No file part in the request"}), 400
 
-        # TODO: dont forget to set the enctype="multipart/form-data" attribute on the frontend HTML form :)
         # See https://flask.palletsprojects.com/en/stable/patterns/fileuploads/
         file = request.files['file']
         if file.filename == "":
