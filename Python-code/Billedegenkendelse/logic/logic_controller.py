@@ -150,16 +150,10 @@ class LogicController:
             face_landmarker_result,
         )
 
-
-
-        self.visualizer_helper.visualize_pixelation(image_bytes, detection_result=face_detector_result)
-
-        # Her bruger du stadig din eksisterende pixelations-visualisering
         self.visualizer_helper.visualize_pixelation(
             image_bytes,
             detection_result=face_detector_result
         )
-
 
         self.visualizer_helper.annotate_eyes_visible(
             image_bytes=image_bytes,
