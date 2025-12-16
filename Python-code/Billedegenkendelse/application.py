@@ -86,7 +86,6 @@ def analyze_image():
             return jsonify({"error": f"Unexpected content-type: {file.mimetype}"}), 400
 
         # Default to 0.5, get threshold from form or query param.
-        #TODO: Depending on how we make the frontend, we might need to change this (if we dont use a form)
         raw_thr = request.form.get("threshold") or request.args.get("threshold") or "0.5"
         try:
             threshold = float(raw_thr)
