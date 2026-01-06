@@ -106,8 +106,9 @@ def get_yaw_pitch(face_result: MockFaceLandmarkerResult) -> tuple[float, float]:
 
 # --- FaceLookingAtCamera-klasse (kopieret fra din kode) ---
 class FaceLookingAtCamera:
-    def __init__(self, tolerance_degrees=10):
-        self.tolerance = tolerance_degrees
+    def __init__(self, tolerance_yaw_degrees=7, tolerance_pitch_degrees=15):
+        self.yaw_tolerance = tolerance_yaw_degrees
+        self.pitch_tolerance = tolerance_pitch_degrees
 
     def face_detector(self, result: MockFaceLandmarkerResult) -> CheckResult:
 
@@ -122,7 +123,7 @@ class FaceLookingAtCamera:
                 message=f"Failed to compute head rotation: {str(e)}"
             )
 
-        if abs(yaw) <= self.tolerance and abs(pitch) <= self.tolerance:
+        if abs(yaw) <= self.yaw_tolerance and abs(pitch) <= self.pitch_tolerance:
             return CheckResult(
                 requirement=Requirement.FACE_LOOKING_AT_CAMERA,
                 passed=True,
@@ -143,13 +144,13 @@ class FaceLookingAtCamera:
 # Opret et fixture for FaceLookingAtCamera med standard tolerance (10 grader)
 @pytest.fixture
 def face_checker_default():
-    return FaceLookingAtCamera(tolerance_degrees=10)
+    return FaceLookingAtCamera(tolerance_yaw_degrees=7, tolerance_pitch_degrees=15)
 
 
 # Opret et fixture for FaceLookingAtCamera med en strammere tolerance
 @pytest.fixture
 def face_checker_tight():
-    return FaceLookingAtCamera(tolerance_degrees=5)
+    return FaceLookingAtCamera(tolerance_yaw_degrees=5, tolerance_pitch_degrees=10)
 
 
 # Hjælpefunktion til at oprette et mock-resultat for "straight" ansigt
@@ -294,8 +295,8 @@ def test_face_looking_at_camera_pass_straight(face_checker_default):
 
 # test: Ansigt er tæt på grænsen (bør PASS)
 def test_face_looking_at_camera_pass_at_tolerance_limit(face_checker_default):
-    # test med YAW = 10 grader (tolerance_degrees=10)
-    result = create_yawed_face_result(10.0)
+    # YAW = 7 grader (yaw-tolerance=7) -> PASS
+    result = create_yawed_face_result(7.0)
     expected = CheckResult(
         requirement=Requirement.FACE_LOOKING_AT_CAMERA,
         passed=True,
@@ -305,10 +306,11 @@ def test_face_looking_at_camera_pass_at_tolerance_limit(face_checker_default):
     assert face_checker_default.face_detector(result) == expected
 
 
+
 # test: Ansigt er lige over grænsen (bør FAIL)
 def test_face_looking_at_camera_fail_just_over_tolerance(face_checker_default):
-    # test med YAW = 10.1 grader (tolerance_degrees=10)
-    result = create_yawed_face_result(10.1)
+    # YAW = 7.1 grader (yaw-tolerance=7) -> FAIL
+    result = create_yawed_face_result(7.1)
     expected = CheckResult(
         requirement=Requirement.FACE_LOOKING_AT_CAMERA,
         passed=False,
@@ -318,10 +320,23 @@ def test_face_looking_at_camera_fail_just_over_tolerance(face_checker_default):
     assert face_checker_default.face_detector(result) == expected
 
 
+
 # test: Ansigt med stor rotation i PITCH (bør FAIL)
 def test_face_looking_at_camera_fail_high_pitch(face_checker_default):
-    # test med PITCH = 20 grader (tolerance_degrees=10)
+    # PITCH = 20 grader (pitch-tolerance=15) -> FAIL
     result = create_pitched_face_result(20.0)
+    expected = CheckResult(
+        requirement=Requirement.FACE_LOOKING_AT_CAMERA,
+        passed=False,
+        severity=Severity.ERROR,
+        message="Not looking straight"
+    )
+    assert face_checker_default.face_detector(result) == expected
+
+
+def test_face_looking_at_camera_fail_just_over_pitch_tolerance(face_checker_default):
+    # PITCH = 15.1 grader (pitch-tolerance=15) -> FAIL
+    result = create_pitched_face_result(15.1)
     expected = CheckResult(
         requirement=Requirement.FACE_LOOKING_AT_CAMERA,
         passed=False,
@@ -333,13 +348,15 @@ def test_face_looking_at_camera_fail_high_pitch(face_checker_default):
 
 # test: Ansigt med rotation i begge akser, men inden for grænsen (bør PASS)
 def test_face_looking_at_camera_pass_both_axes(face_checker_default):
+    yaw_res = create_yawed_face_result(6.0)     # indenfor yaw<=7
+    pitch_res = create_pitched_face_result(10.0) # indenfor pitch<=15
+
+    # Kombinér landmarks: brug ører fra yaw og pande/hage fra pitch
     landmarks = [None] * 468
-    # Yaw: 7 grader (til højre)
-    landmarks[234] = MockLandmark(x=0.1, y=0.5, z=-0.012)
-    landmarks[454] = MockLandmark(x=-0.1, y=0.5, z=0.012)
-    # Pitch: 8 grader (op)
-    landmarks[10] = MockLandmark(x=0.0, y=0.7, z=0.02)
-    landmarks[152] = MockLandmark(x=0.0, y=0.3, z=-0.02)
+    landmarks[234] = yaw_res.face_landmarks[0][234]
+    landmarks[454] = yaw_res.face_landmarks[0][454]
+    landmarks[10]  = pitch_res.face_landmarks[0][10]
+    landmarks[152] = pitch_res.face_landmarks[0][152]
 
     result = MockFaceLandmarkerResult(landmarks)
     expected = CheckResult(
@@ -349,6 +366,7 @@ def test_face_looking_at_camera_pass_both_axes(face_checker_default):
         message="Looking straight at camera"
     )
     assert face_checker_default.face_detector(result) == expected
+
 
 
 # test: test med strammere tolerance (5 grader)
