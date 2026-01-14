@@ -2,7 +2,6 @@ import cv2
 import os
 import numpy as np
 
-import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from torchgen.gen_functionalization_type import wrap_propagate_mutations_and_return
