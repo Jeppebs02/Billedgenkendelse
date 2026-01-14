@@ -3,11 +3,8 @@ import math
 import cv2
 import numpy as np
 import os
-try:
-    from mediapipe import solutions
-except ImportError:
-    import mediapipe as mp
-    solutions = mp.solutions
+import mediapipe as mp
+solutions = mp.solutions
 
 from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
