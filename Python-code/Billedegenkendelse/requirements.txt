@@ -1,7 +1,7 @@
 pillow
 numpy
 opencv-python
-mediapipe
+mediapipe==0.10.21
 matplotlib
 flask
 flask_cors
